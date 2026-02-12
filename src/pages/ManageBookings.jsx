@@ -1,5 +1,15 @@
-import { useState, useContext } from "react";
-import { Search, ChevronDown, Trash2, Check } from "lucide-react";
+import { useState, useContext, useMemo } from "react";
+import {
+  Search,
+  Filter,
+  Check,
+  X,
+  ChevronDown,
+  MoreHorizontal,
+  Calendar,
+  SortAsc,
+  SortDesc,
+} from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { BookingContext } from "../context/BookingContext";
@@ -8,279 +18,409 @@ export default function ManageBookings() {
   const { bookings, updateBookingStatus } = useContext(BookingContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sortField, setSortField] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Filter bookings
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.phone.includes(searchTerm) ||
-      booking.vehicleNo.toLowerCase().includes(searchTerm.toLowerCase());
+  // Smart filtering and sorting
+  const filteredBookings = useMemo(() => {
+    let result = [...bookings];
 
-    const matchesStatus =
-      filterStatus === "all" || booking.status === filterStatus;
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (b) =>
+          b.id?.toLowerCase().includes(term) ||
+          b.name?.toLowerCase().includes(term) ||
+          b.phone?.includes(term) ||
+          b.vehicleNo?.toLowerCase().includes(term) ||
+          b.service?.toLowerCase().includes(term),
+      );
+    }
 
-    return matchesSearch && matchesStatus;
-  });
+    // Filter by status
+    if (filterStatus !== "all") {
+      result = result.filter((b) => b.status === filterStatus);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortField) {
+        case "date":
+          aVal = new Date(a.date);
+          bVal = new Date(b.date);
+          break;
+        case "name":
+          aVal = a.name?.toLowerCase() || "";
+          bVal = b.name?.toLowerCase() || "";
+          break;
+        case "status":
+          const statusOrder = {
+            Pending: 0,
+            Approved: 1,
+            Completed: 2,
+            Rejected: 3,
+          };
+          aVal = statusOrder[a.status] || 0;
+          bVal = statusOrder[b.status] || 0;
+          break;
+        default:
+          aVal = a[sortField];
+          bVal = b[sortField];
+      }
+      if (sortOrder === "asc") return aVal > bVal ? 1 : -1;
+      return aVal < bVal ? 1 : -1;
+    });
+
+    return result;
+  }, [bookings, searchTerm, filterStatus, sortField, sortOrder]);
 
   const handleStatusChange = (bookingId, newStatus) => {
     updateBookingStatus(bookingId, newStatus);
     setSelectedBooking(null);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Pending":
-        return "bg-amber-100 text-amber-800 border-l-4 border-amber-500";
-      case "Approved":
-        return "bg-cyan-100 text-cyan-800 border-l-4 border-cyan-500";
-      case "Completed":
-        return "bg-emerald-100 text-emerald-800 border-l-4 border-emerald-500";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("desc");
     }
+  };
+
+  const statusCounts = useMemo(
+    () => ({
+      all: bookings.length,
+      Pending: bookings.filter((b) => b.status === "Pending").length,
+      Approved: bookings.filter((b) => b.status === "Approved").length,
+      Completed: bookings.filter((b) => b.status === "Completed").length,
+      Rejected: bookings.filter((b) => b.status === "Rejected").length,
+    }),
+    [bookings],
+  );
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return null;
+    return sortOrder === "asc" ? <SortAsc size={14} /> : <SortDesc size={14} />;
   };
 
   return (
     <>
       <Header />
 
-      <main className="min-h-screen py-12 px-4 bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50">
+      <main className="min-h-screen bg-slate-50 py-8 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
-          <div className="mb-8 animate-fade-in">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-600 bg-clip-text text-transparent mb-2">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-slate-900 mb-1">
               Manage Bookings
             </h1>
-            <p className="text-gray-600">
+            <p className="text-slate-600 text-sm">
               View and manage all service bookings
             </p>
           </div>
 
-          {/* Filters and Search */}
-          <div className="card shadow-medium mb-6 bg-white/80 backdrop-blur">
-            <div className="space-y-4">
+          {/* Search and Filters */}
+          <div className="card mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               {/* Search */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Search Bookings
-                </label>
-                <div className="relative">
-                  <Search
-                    className="absolute left-4 top-3.5 text-cyan-500"
-                    size={20}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search by ID, name, phone, or vehicle number..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all"
-                  />
-                </div>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by ID, name, phone, vehicle, or service..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="input-field pl-10"
+                />
               </div>
 
-              {/* Filter by Status */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Filter by Status
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {["all", "Pending", "Approved", "Completed"].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => setFilterStatus(status)}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
-                        filterStatus === status
-                          ? "bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-md hover:shadow-lg"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {status === "all" ? "All Bookings" : status}
-                      {status !== "all" && (
-                        <span className="ml-2">
-                          ({bookings.filter((b) => b.status === status).length})
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Results Count */}
-              <div className="text-sm text-gray-600">
-                Found{" "}
-                <span className="font-semibold text-cyan-600">
-                  {filteredBookings.length}
-                </span>{" "}
-                booking(s)
-              </div>
+              {/* Filter Toggle */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`btn-secondary flex items-center gap-2 ${showFilters ? "bg-sky-50 border-sky-200 text-sky-700" : ""}`}
+              >
+                <Filter size={16} />
+                Filters
+                {filterStatus !== "all" && (
+                  <span className="w-5 h-5 bg-sky-600 text-white text-xs rounded-full flex items-center justify-center">
+                    1
+                  </span>
+                )}
+              </button>
             </div>
+
+            {/* Filter Options */}
+            {showFilters && (
+              <div className="mt-4 pt-4 border-t border-slate-100 animate-slide-down">
+                <p className="text-sm font-medium text-slate-700 mb-3">
+                  Filter by Status
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["all", "Pending", "Approved", "Completed", "Rejected"].map(
+                    (status) => (
+                      <button
+                        key={status}
+                        onClick={() => setFilterStatus(status)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          filterStatus === status
+                            ? "bg-sky-600 text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {status === "all" ? "All" : status}
+                        <span className="ml-1.5 opacity-70">
+                          ({statusCounts[status]})
+                        </span>
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Results Info */}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-slate-600">
+              Showing{" "}
+              <span className="font-medium text-slate-900">
+                {filteredBookings.length}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-slate-900">
+                {bookings.length}
+              </span>{" "}
+              bookings
+            </p>
           </div>
 
           {/* Bookings Table */}
-          <div className="card shadow-medium bg-white/80 backdrop-blur">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-blue-50 via-cyan-50 to-teal-50 border-b-2 border-cyan-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">
-                      ID
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">
-                      Customer
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">
-                      Vehicle
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">
-                      Service
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">
-                      Date & Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-blue-900">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredBookings.length > 0 ? (
-                    filteredBookings.map((booking) => (
-                      <tr
-                        key={booking.id}
-                        className="hover:bg-gray-50 transition"
-                      >
-                        <td className="px-4 py-3">
-                          <span className="font-mono font-semibold text-blue-600">
+          <div className="card overflow-hidden">
+            {filteredBookings.length > 0 ? (
+              <div className="overflow-x-auto -m-6">
+                <table className="w-full min-w-[800px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="table-header">
+                        <button
+                          onClick={() => toggleSort("id")}
+                          className="flex items-center gap-1 hover:text-slate-900"
+                        >
+                          Booking ID <SortIcon field="id" />
+                        </button>
+                      </th>
+                      <th className="table-header">
+                        <button
+                          onClick={() => toggleSort("name")}
+                          className="flex items-center gap-1 hover:text-slate-900"
+                        >
+                          Customer <SortIcon field="name" />
+                        </button>
+                      </th>
+                      <th className="table-header">Vehicle</th>
+                      <th className="table-header">Service</th>
+                      <th className="table-header">
+                        <button
+                          onClick={() => toggleSort("date")}
+                          className="flex items-center gap-1 hover:text-slate-900"
+                        >
+                          Date & Time <SortIcon field="date" />
+                        </button>
+                      </th>
+                      <th className="table-header">
+                        <button
+                          onClick={() => toggleSort("status")}
+                          className="flex items-center gap-1 hover:text-slate-900"
+                        >
+                          Status <SortIcon field="status" />
+                        </button>
+                      </th>
+                      <th className="table-header text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBookings.map((booking) => (
+                      <tr key={booking.id} className="table-row group">
+                        <td className="table-cell">
+                          <span className="font-mono font-medium text-sky-600">
                             {booking.id}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div>
-                            <p className="font-semibold text-gray-900">
-                              {booking.name}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {booking.phone}
-                            </p>
-                          </div>
+                        <td className="table-cell">
+                          <p className="font-medium text-slate-900">
+                            {booking.name}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {booking.phone}
+                          </p>
                         </td>
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-gray-900">
+                        <td className="table-cell">
+                          <p className="font-medium text-slate-700">
                             {booking.vehicleNo}
                           </p>
-                          {booking.vehicleModel && (
-                            <p className="text-sm text-gray-600">
-                              {booking.vehicleModel}
-                            </p>
-                          )}
                         </td>
-                        <td className="px-4 py-3 text-gray-700">
+                        <td className="table-cell text-slate-700">
                           {booking.service}
                         </td>
-                        <td className="px-4 py-3">
-                          <p className="text-gray-900">{booking.date}</p>
-                          <p className="text-sm text-gray-600">
-                            {booking.time}
-                          </p>
+                        <td className="table-cell">
+                          <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-slate-400" />
+                            <div>
+                              <p className="text-slate-700">{booking.date}</p>
+                              <p className="text-xs text-slate-500">
+                                {booking.time}
+                              </p>
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="table-cell">
                           <span
                             className={`badge ${
                               booking.status === "Pending"
                                 ? "badge-pending"
                                 : booking.status === "Approved"
                                   ? "badge-approved"
-                                  : "badge-completed"
+                                  : booking.status === "Completed"
+                                    ? "badge-completed"
+                                    : "badge-rejected"
                             }`}
                           >
                             {booking.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center space-x-2">
-                            {/* Status Change Dropdown */}
-                            <div className="relative group">
-                              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                                <ChevronDown
-                                  size={18}
-                                  className="text-gray-600"
-                                />
+                        <td className="table-cell">
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Quick Actions */}
+                            {booking.status === "Pending" && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleStatusChange(booking.id, "Approved")
+                                  }
+                                  className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                  title="Approve"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleStatusChange(booking.id, "Rejected")
+                                  }
+                                  className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                                  title="Reject"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </>
+                            )}
+                            {booking.status === "Approved" && (
+                              <button
+                                onClick={() =>
+                                  handleStatusChange(booking.id, "Completed")
+                                }
+                                className="px-2 py-1 rounded text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                              >
+                                Mark Complete
                               </button>
-                              <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block z-10">
-                                {booking.status !== "Pending" && (
-                                  <button
-                                    onClick={() =>
-                                      handleStatusChange(booking.id, "Pending")
-                                    }
-                                    className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-yellow-700"
-                                  >
-                                    Mark Pending
-                                  </button>
-                                )}
-                                {booking.status !== "Approved" && (
-                                  <button
-                                    onClick={() =>
-                                      handleStatusChange(booking.id, "Approved")
-                                    }
-                                    className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-blue-700 border-t border-gray-100"
-                                  >
-                                    Mark Approved
-                                  </button>
-                                )}
-                                {booking.status !== "Completed" && (
-                                  <button
-                                    onClick={() =>
-                                      handleStatusChange(
-                                        booking.id,
-                                        "Completed",
-                                      )
-                                    }
-                                    className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-green-700 border-t border-gray-100"
-                                  >
-                                    Mark Completed
-                                  </button>
-                                )}
-                              </div>
+                            )}
+                            {/* Dropdown for all options */}
+                            <div className="relative">
+                              <button
+                                onClick={() =>
+                                  setSelectedBooking(
+                                    selectedBooking === booking.id
+                                      ? null
+                                      : booking.id,
+                                  )
+                                }
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                              >
+                                <MoreHorizontal size={16} />
+                              </button>
+                              {selectedBooking === booking.id && (
+                                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20 animate-scale-in">
+                                  {booking.status !== "Pending" && (
+                                    <button
+                                      onClick={() =>
+                                        handleStatusChange(
+                                          booking.id,
+                                          "Pending",
+                                        )
+                                      }
+                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                                    >
+                                      Set Pending
+                                    </button>
+                                  )}
+                                  {booking.status !== "Approved" && (
+                                    <button
+                                      onClick={() =>
+                                        handleStatusChange(
+                                          booking.id,
+                                          "Approved",
+                                        )
+                                      }
+                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                                    >
+                                      Set Approved
+                                    </button>
+                                  )}
+                                  {booking.status !== "Completed" && (
+                                    <button
+                                      onClick={() =>
+                                        handleStatusChange(
+                                          booking.id,
+                                          "Completed",
+                                        )
+                                      }
+                                      className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                                    >
+                                      Set Completed
+                                    </button>
+                                  )}
+                                  {booking.status !== "Rejected" && (
+                                    <button
+                                      onClick={() =>
+                                        handleStatusChange(
+                                          booking.id,
+                                          "Rejected",
+                                        )
+                                      }
+                                      className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                    >
+                                      Set Rejected
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
-
-                            {/* Delete Button */}
-                            <button
-                              className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition"
-                              title="Delete booking"
-                            >
-                              <Trash2 size={18} />
-                            </button>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="7"
-                        className="px-4 py-8 text-center text-gray-600"
-                      >
-                        No bookings found matching your criteria
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Bulk Actions Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-            <p className="text-sm text-blue-800">
-              <strong>Tip:</strong> Use the dropdown menu in the Actions column
-              to update booking status. You can also delete bookings if needed.
-            </p>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">
+                  No bookings found
+                </h3>
+                <p className="text-slate-500">
+                  {searchTerm || filterStatus !== "all"
+                    ? "Try adjusting your search or filter criteria"
+                    : "Bookings will appear here once customers start booking"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>

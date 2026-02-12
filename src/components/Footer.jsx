@@ -1,99 +1,160 @@
-import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Heart,
+  ArrowUpRight,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-white mt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className="bg-gradient-to-b from-slate-900 to-slate-950 text-white mt-auto">
+      {/* Top wave decoration */}
+      <div className="h-1 bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">V</span>
-              </div>
-              <span className="font-bold text-lg">VehicleCare</span>
-            </div>
-            <p className="text-gray-400 text-sm">
+          <div className="lg:col-span-1">
+            <Link to="/" className="flex items-center mb-5 group">
+              <span className="text-2xl font-black tracking-tight">
+                <span className="bg-gradient-to-r from-sky-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
+                  Vehicle
+                </span>
+                <span className="text-white">Care</span>
+              </span>
+              <span className="ml-1 w-2 h-2 rounded-full bg-gradient-to-r from-sky-400 to-cyan-400 group-hover:scale-125 transition-transform" />
+            </Link>
+            <p className="text-slate-400 text-sm leading-relaxed mb-6">
               Professional vehicle service booking made simple and accessible.
+              Your trusted partner for all vehicle maintenance needs.
             </p>
+            <div className="flex gap-3">
+              {[
+                { icon: Facebook, color: "hover:bg-blue-600" },
+                { icon: Twitter, color: "hover:bg-sky-500" },
+                { icon: Linkedin, color: "hover:bg-blue-700" },
+              ].map((social, idx) => (
+                <a
+                  key={idx}
+                  href="#"
+                  className={`w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center ${social.color} transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
+                >
+                  <social.icon size={18} />
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li>
-                <a href="/" className="hover:text-white transition">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a href="/services" className="hover:text-white transition">
-                  Services
-                </a>
-              </li>
-              <li>
-                <a href="/book" className="hover:text-white transition">
-                  Book Service
-                </a>
-              </li>
-              <li>
-                <a href="/track" className="hover:text-white transition">
-                  Track Booking
-                </a>
-              </li>
+            <h4 className="font-semibold text-white mb-5 text-lg">
+              Quick Links
+            </h4>
+            <ul className="space-y-3">
+              {[
+                { to: "/", label: "Home" },
+                { to: "/services", label: "Services" },
+                { to: "/track", label: "Track Booking" },
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link
+                    to={link.to}
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 group"
+                  >
+                    <span className="w-1.5 h-1.5 bg-sky-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {link.label}
+                    <ArrowUpRight
+                      size={14}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Contact</h4>
-            <ul className="space-y-3 text-sm text-gray-400">
-              <li className="flex items-center space-x-2">
-                <Phone size={16} />
-                <span>+1 (555) 123-4567</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <Mail size={16} />
-                <span>info@vehiclecare.com</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <MapPin size={16} />
-                <span>123 Auto Street, Tech City</span>
-              </li>
+            <h4 className="font-semibold text-white mb-5 text-lg">
+              Contact Us
+            </h4>
+            <ul className="space-y-4">
+              {[
+                {
+                  icon: Phone,
+                  text: "+1 (555) 123-4567",
+                  color: "text-emerald-400",
+                },
+                {
+                  icon: Mail,
+                  text: "info@vehiclecare.com",
+                  color: "text-sky-400",
+                },
+                {
+                  icon: MapPin,
+                  text: "123 Auto Street, Tech City",
+                  color: "text-amber-400",
+                },
+              ].map((item, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-center gap-3 text-slate-400 group hover:text-white transition-colors cursor-pointer"
+                >
+                  <div className="w-9 h-9 bg-slate-800 rounded-lg flex items-center justify-center group-hover:bg-slate-700 transition-colors">
+                    <item.icon size={16} className={item.color} />
+                  </div>
+                  <span className="text-sm">{item.text}</span>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Social */}
+          {/* Working Hours */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Follow Us</h4>
-            <div className="flex space-x-4">
-              <a
-                href="#"
-                className="bg-blue-600 p-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                <Facebook size={18} />
-              </a>
-              <a
-                href="#"
-                className="bg-blue-600 p-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                <Twitter size={18} />
-              </a>
-              <a
-                href="#"
-                className="bg-blue-600 p-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                <Linkedin size={18} />
-              </a>
+            <h4 className="font-semibold text-white mb-5 text-lg">
+              Working Hours
+            </h4>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Mon - Fri</span>
+                <span className="text-white font-medium">
+                  8:00 AM - 6:00 PM
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Saturday</span>
+                <span className="text-white font-medium">
+                  9:00 AM - 4:00 PM
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Sunday</span>
+                <span className="text-amber-400 font-medium">Closed</span>
+              </div>
+            </div>
+            <div className="mt-6 p-4 bg-gradient-to-r from-sky-500/10 to-cyan-500/10 rounded-xl border border-sky-500/20">
+              <p className="text-sm text-sky-400 font-medium">
+                Emergency Service
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                24/7 roadside assistance available
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-700 pt-8 text-center text-gray-400 text-sm">
-          <p>
-            &copy; 2026 VehicleCare. All rights reserved. | Professional Vehicle
-            Service Booking
+        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-slate-500 text-sm text-center md:text-left">
+            2026 VehicleCare. All rights reserved.
+          </p>
+          <p className="text-slate-500 text-sm flex items-center gap-1">
+            Made with <Heart size={14} className="text-red-500 fill-red-500" />{" "}
+            for vehicle enthusiasts
           </p>
         </div>
       </div>

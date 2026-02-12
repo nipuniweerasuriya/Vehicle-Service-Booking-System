@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useState, useContext, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Wrench,
   Droplet,
@@ -6,15 +7,144 @@ import {
   Disc3,
   Battery,
   Wind,
-  ArrowRight,
+  X,
+  Calendar,
+  Clock,
+  Car,
+  User,
+  Phone,
+  CheckCircle,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { useContext } from "react";
 import { BookingContext } from "../context/BookingContext";
+import { AuthContext } from "../context/AuthContext";
 
 export default function ServiceList() {
-  const { services } = useContext(BookingContext);
+  const navigate = useNavigate();
+  const { services, addBooking } = useContext(BookingContext);
+  const { user, isUserLoggedIn } = useContext(AuthContext);
+
+  const [selectedService, setSelectedService] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    vehicleNo: "",
+    vehicleModel: "",
+    date: "",
+    time: "",
+  });
+  const [errors, setErrors] = useState({});
+
+  // Pre-fill user data when modal opens
+  const openBookingModal = (service) => {
+    setSelectedService(service);
+    setFormData({
+      name: user?.name || "",
+      phone: user?.phone || "",
+      vehicleNo: "",
+      vehicleModel: "",
+      date: "",
+      time: "",
+    });
+    setStep(1);
+    setErrors({});
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedService(null);
+    setStep(1);
+  };
+
+  // Get next 7 days for quick selection
+  const quickDates = useMemo(() => {
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      dates.push({
+        value: date.toISOString().split("T")[0],
+        day: date.toLocaleDateString("en-US", { weekday: "short" }),
+        date: date.getDate(),
+        month: date.toLocaleDateString("en-US", { month: "short" }),
+      });
+    }
+    return dates;
+  }, []);
+
+  const timeSlots = [
+    "9:00 AM",
+    "10:00 AM",
+    "11:00 AM",
+    "12:00 PM",
+    "1:00 PM",
+    "2:00 PM",
+    "3:00 PM",
+    "4:00 PM",
+    "5:00 PM",
+  ];
+
+  const validateStep = () => {
+    const newErrors = {};
+
+    if (step === 1) {
+      if (!formData.date) newErrors.date = "Please select a date";
+      if (!formData.time) newErrors.time = "Please select a time";
+    } else if (step === 2) {
+      if (!formData.vehicleNo.trim())
+        newErrors.vehicleNo = "Vehicle number is required";
+      if (!formData.vehicleModel.trim())
+        newErrors.vehicleModel = "Vehicle model is required";
+      if (!isUserLoggedIn) {
+        if (!formData.name.trim()) newErrors.name = "Name is required";
+        if (!formData.phone.trim()) newErrors.phone = "Phone is required";
+        else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ""))) {
+          newErrors.phone = "Enter valid 10-digit phone";
+        }
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep()) {
+      setStep(step + 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateStep()) return;
+
+    setLoading(true);
+    try {
+      const bookingData = {
+        name: isUserLoggedIn ? user.name : formData.name,
+        phone: isUserLoggedIn ? user.phone : formData.phone,
+        vehicleNo: formData.vehicleNo,
+        vehicleModel: formData.vehicleModel,
+        service: selectedService.name,
+        servicePrice: selectedService.price,
+        date: formData.date,
+        time: formData.time,
+      };
+
+      await addBooking(bookingData);
+      setStep(4); // Success step
+    } catch (error) {
+      console.error("Booking error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const iconMap = {
     Wrench: Wrench,
@@ -29,70 +159,76 @@ export default function ServiceList() {
     <>
       <Header />
 
-      <main className="min-h-screen py-16 px-4">
+      <main className="min-h-screen py-16 px-4 bg-gradient-mesh">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
-          <div className="mb-12 animate-fade-in">
+          <div className="mb-12 animate-fade-in text-center">
             <div className="mb-4 inline-block">
-              <span className="bg-blue-100 px-4 py-2 rounded-full text-sm font-semibold text-blue-700">
+              <span className="bg-gradient-to-r from-sky-100 to-cyan-100 px-5 py-2 rounded-full text-sm font-bold text-sky-700">
                 Our Services
               </span>
             </div>
-            <h1 className="section-title mb-4">
-              Professional Vehicle Services
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              <span className="gradient-text">
+                Professional Vehicle Services
+              </span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl">
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               Choose from our comprehensive range of professional vehicle
               maintenance and repair services.
             </p>
           </div>
 
           {/* Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {services.map((service, idx) => {
               const IconComponent = iconMap[service.icon] || Wrench;
               const gradients = [
-                "from-blue-400 to-cyan-400",
-                "from-green-400 to-emerald-400",
-                "from-purple-400 to-pink-400",
-                "from-orange-400 to-red-400",
-                "from-yellow-400 to-orange-400",
-                "from-indigo-400 to-purple-400",
+                "from-sky-500 to-cyan-500",
+                "from-emerald-500 to-teal-500",
+                "from-violet-500 to-purple-500",
+                "from-orange-500 to-red-500",
+                "from-amber-500 to-orange-500",
+                "from-indigo-500 to-violet-500",
               ];
               const gradient = gradients[idx % gradients.length];
 
               return (
                 <div
-                  key={service.id}
-                  className="card-interactive group border-cyan-100"
+                  key={service._id || service.id}
+                  className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div
-                      className={`p-3 bg-gradient-to-br ${gradient} rounded-xl group-hover:shadow-glow transition-all duration-300`}
+                      className={`p-3 bg-gradient-to-br ${gradient} rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
                     >
                       <IconComponent className="text-white" size={28} />
                     </div>
-                    <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                    <div className="text-2xl font-bold gradient-text">
                       {service.price}
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-xl mb-2">{service.name}</h3>
-                  <p className="text-gray-600 text-sm mb-6">
+                  <h3 className="font-bold text-xl mb-2 text-slate-900">
+                    {service.name}
+                  </h3>
+                  <p className="text-slate-600 text-sm mb-6">
                     {service.description}
                   </p>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <span className="text-sm font-semibold text-gray-600">
-                      Estimated: 30-60 min
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-200/50">
+                    <span className="text-sm font-medium text-slate-500">
+                      30-60 min
                     </span>
-                    <Link
-                      to="/book"
-                      className="text-blue-600 hover:text-cyan-600 font-semibold flex items-center space-x-1 group-hover:translate-x-1 transition-transform"
+                    <button
+                      onClick={() => openBookingModal(service)}
+                      className="px-4 py-2 bg-gradient-to-r from-sky-500 to-cyan-500 text-white rounded-lg font-semibold text-sm
+                               hover:from-sky-600 hover:to-cyan-600 transition-all duration-300 flex items-center gap-2
+                               shadow-md shadow-sky-500/30 hover:shadow-lg group-hover:scale-105"
                     >
-                      <span>Book</span>
-                      <ArrowRight size={16} />
-                    </Link>
+                      Book Now
+                      <ChevronRight size={16} />
+                    </button>
                   </div>
                 </div>
               );
@@ -100,11 +236,11 @@ export default function ServiceList() {
           </div>
 
           {/* Additional Info */}
-          <div className="bg-gradient-to-r from-blue-50 via-cyan-50 to-teal-50 rounded-2xl p-8 border border-cyan-200">
-            <h2 className="text-2xl font-bold mb-4">
+          <div className="glass-card p-8 bg-gradient-to-r from-sky-50/80 via-cyan-50/80 to-teal-50/80">
+            <h2 className="text-2xl font-bold mb-4 text-slate-900">
               Not sure which service you need?
             </h2>
-            <p className="text-gray-700 mb-6">
+            <p className="text-slate-600 mb-6">
               Our expert technicians can assess your vehicle and recommend the
               best service package. Contact us for a free consultation.
             </p>
@@ -118,15 +254,15 @@ export default function ServiceList() {
 
           {/* FAQ Section */}
           <div className="mt-16">
-            <h2 className="text-3xl font-bold mb-8">
+            <h2 className="text-3xl font-bold mb-8 text-center">
               Frequently Asked Questions
             </h2>
-            <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
               {[
                 {
                   question: "How long does a typical service take?",
                   answer:
-                    "Most services take between 30 minutes to 2 hours depending on the type of service. We'll provide you with an estimated time during booking.",
+                    "Most services take between 30 minutes to 2 hours depending on the type of service.",
                 },
                 {
                   question: "Do you offer warranty on services?",
@@ -141,18 +277,373 @@ export default function ServiceList() {
                 {
                   question: "Do you use genuine parts?",
                   answer:
-                    "Absolutely! We only use genuine and high-quality parts to ensure the best performance and longevity.",
+                    "Absolutely! We only use genuine and high-quality parts to ensure the best performance.",
                 },
               ].map((item, idx) => (
-                <div key={idx} className="card">
-                  <h3 className="font-bold text-lg mb-2">{item.question}</h3>
-                  <p className="text-gray-600">{item.answer}</p>
+                <div key={idx} className="glass-card p-5">
+                  <h3 className="font-bold text-lg mb-2 text-slate-900">
+                    {item.question}
+                  </h3>
+                  <p className="text-slate-600 text-sm">{item.answer}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </main>
+
+      {/* Booking Modal */}
+      {showModal && selectedService && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between rounded-t-2xl">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Book Service
+                </h2>
+                <p className="text-sm text-slate-500">{selectedService.name}</p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+
+            {/* Progress Steps */}
+            {step < 4 && (
+              <div className="px-6 pt-4">
+                <div className="flex items-center justify-between mb-6">
+                  {["Schedule", "Details", "Confirm"].map((label, idx) => (
+                    <div key={label} className="flex items-center">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                          step > idx + 1
+                            ? "bg-emerald-500 text-white"
+                            : step === idx + 1
+                              ? "bg-sky-500 text-white"
+                              : "bg-slate-200 text-slate-500"
+                        }`}
+                      >
+                        {step > idx + 1 ? <CheckCircle size={16} /> : idx + 1}
+                      </div>
+                      {idx < 2 && (
+                        <div
+                          className={`w-16 h-1 mx-2 rounded ${
+                            step > idx + 1 ? "bg-emerald-500" : "bg-slate-200"
+                          }`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="p-6 pt-2">
+              {/* Step 1: Schedule */}
+              {step === 1 && (
+                <div className="space-y-6 animate-fade-in">
+                  {/* Date Selection */}
+                  <div>
+                    <label className="form-label flex items-center gap-2">
+                      <Calendar size={16} className="text-sky-500" />
+                      Select Date
+                    </label>
+                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 mt-2">
+                      {quickDates.map((d) => (
+                        <button
+                          key={d.value}
+                          type="button"
+                          onClick={() =>
+                            setFormData({ ...formData, date: d.value })
+                          }
+                          className={`p-3 rounded-xl text-center transition-all ${
+                            formData.date === d.value
+                              ? "bg-sky-500 text-white shadow-lg shadow-sky-500/30"
+                              : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <div className="text-xs font-medium">{d.day}</div>
+                          <div className="text-lg font-bold">{d.date}</div>
+                        </button>
+                      ))}
+                    </div>
+                    {errors.date && (
+                      <p className="text-red-500 text-sm mt-1">{errors.date}</p>
+                    )}
+                  </div>
+
+                  {/* Time Selection */}
+                  <div>
+                    <label className="form-label flex items-center gap-2">
+                      <Clock size={16} className="text-sky-500" />
+                      Select Time
+                    </label>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {timeSlots.map((time) => (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, time })}
+                          className={`p-3 rounded-xl font-medium transition-all ${
+                            formData.time === time
+                              ? "bg-sky-500 text-white shadow-lg shadow-sky-500/30"
+                              : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
+                    {errors.time && (
+                      <p className="text-red-500 text-sm mt-1">{errors.time}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Details */}
+              {step === 2 && (
+                <div className="space-y-4 animate-fade-in">
+                  {/* Vehicle Info */}
+                  <div>
+                    <label className="form-label flex items-center gap-2">
+                      <Car size={16} className="text-sky-500" />
+                      Vehicle Number
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.vehicleNo}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          vehicleNo: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="e.g., ABC 1234"
+                      className="input-field"
+                    />
+                    {errors.vehicleNo && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.vehicleNo}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="form-label">Vehicle Model</label>
+                    <input
+                      type="text"
+                      value={formData.vehicleModel}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          vehicleModel: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Toyota Camry 2022"
+                      className="input-field"
+                    />
+                    {errors.vehicleModel && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.vehicleModel}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Contact Info (only for non-logged-in users) */}
+                  {!isUserLoggedIn && (
+                    <>
+                      <div className="border-t border-slate-200 pt-4 mt-4">
+                        <p className="text-sm text-slate-500 mb-4">
+                          Contact Information
+                        </p>
+                      </div>
+                      <div>
+                        <label className="form-label flex items-center gap-2">
+                          <User size={16} className="text-sky-500" />
+                          Your Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.name}
+                          onChange={(e) =>
+                            setFormData({ ...formData, name: e.target.value })
+                          }
+                          placeholder="John Doe"
+                          className="input-field"
+                        />
+                        {errors.name && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.name}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="form-label flex items-center gap-2">
+                          <Phone size={16} className="text-sky-500" />
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) =>
+                            setFormData({ ...formData, phone: e.target.value })
+                          }
+                          placeholder="1234567890"
+                          className="input-field"
+                        />
+                        {errors.phone && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.phone}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Step 3: Confirm */}
+              {step === 3 && (
+                <div className="animate-fade-in">
+                  <div className="bg-gradient-to-r from-sky-50 to-cyan-50 rounded-xl p-5 mb-4">
+                    <h3 className="font-bold text-lg text-slate-900 mb-4">
+                      Booking Summary
+                    </h3>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Service</span>
+                        <span className="font-semibold text-slate-900">
+                          {selectedService.name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Price</span>
+                        <span className="font-bold text-sky-600">
+                          {selectedService.price}
+                        </span>
+                      </div>
+                      <div className="border-t border-slate-200 pt-3">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Date</span>
+                          <span className="font-semibold">
+                            {new Date(formData.date).toLocaleDateString(
+                              "en-US",
+                              {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Time</span>
+                        <span className="font-semibold">{formData.time}</span>
+                      </div>
+                      <div className="border-t border-slate-200 pt-3">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Vehicle</span>
+                          <span className="font-semibold">
+                            {formData.vehicleNo}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Model</span>
+                        <span className="font-semibold">
+                          {formData.vehicleModel}
+                        </span>
+                      </div>
+                      <div className="border-t border-slate-200 pt-3">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Name</span>
+                          <span className="font-semibold">
+                            {isUserLoggedIn ? user.name : formData.name}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Phone</span>
+                        <span className="font-semibold">
+                          {isUserLoggedIn ? user.phone : formData.phone}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Success */}
+              {step === 4 && (
+                <div className="text-center py-6 animate-scale-in">
+                  <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle size={40} className="text-emerald-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                    Booking Confirmed!
+                  </h3>
+                  <p className="text-slate-600 mb-6">
+                    Your service has been booked successfully. We'll contact you
+                    shortly.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => navigate("/track")}
+                      className="btn-outline"
+                    >
+                      Track Booking
+                    </button>
+                    <button onClick={closeModal} className="btn-primary">
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              {step < 4 && (
+                <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200">
+                  {step > 1 && (
+                    <button
+                      onClick={() => setStep(step - 1)}
+                      className="btn-secondary flex-1"
+                    >
+                      Back
+                    </button>
+                  )}
+                  {step < 3 ? (
+                    <button onClick={handleNext} className="btn-primary flex-1">
+                      Continue
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={loading}
+                      className="btn-primary flex-1 flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles size={18} />
+                          Confirm Booking
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>

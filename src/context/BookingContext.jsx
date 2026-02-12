@@ -7,7 +7,9 @@ export const BookingContext = createContext({
   setCurrentBooking: () => {},
   addBooking: () => {},
   updateBookingStatus: () => {},
+  fetchBookings: () => {},
   services: [],
   setServices: () => {},
   addService: () => {},
+  deleteService: () => {},
 });

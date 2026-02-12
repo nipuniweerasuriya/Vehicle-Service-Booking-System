@@ -1,5 +1,17 @@
 import { useState, useContext } from "react";
-import { Plus, Edit, Trash2, X } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  X,
+  Wrench,
+  Droplet,
+  Zap,
+  Disc3,
+  Battery,
+  Wind,
+  Car,
+} from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { BookingContext } from "../context/BookingContext";
@@ -68,16 +80,28 @@ export default function ServiceManagement() {
     });
   };
 
-  const getEmojiForIcon = (icon) => {
-    const emojiMap = {
-      Wrench: "🔧",
-      Droplet: "💧",
-      Zap: "⚡",
-      Disc3: "🔄",
-      Battery: "🔋",
-      Wind: "💨",
+  const getIconForService = (icon) => {
+    const iconMap = {
+      Wrench: <Wrench size={24} className="text-white" />,
+      Droplet: <Droplet size={24} className="text-white" />,
+      Zap: <Zap size={24} className="text-white" />,
+      Disc3: <Disc3 size={24} className="text-white" />,
+      Battery: <Battery size={24} className="text-white" />,
+      Wind: <Wind size={24} className="text-white" />,
     };
-    return emojiMap[icon] || "🔧";
+    return iconMap[icon] || <Wrench size={24} className="text-white" />;
+  };
+
+  const getIconLabel = (icon) => {
+    const labels = {
+      Wrench: "Tools",
+      Droplet: "Fluid",
+      Zap: "Electrical",
+      Disc3: "Wheels",
+      Battery: "Battery",
+      Wind: "Climate",
+    };
+    return labels[icon] || icon;
   };
 
   return (
@@ -169,7 +193,7 @@ export default function ServiceManagement() {
                     >
                       {iconOptions.map((icon) => (
                         <option key={icon} value={icon}>
-                          {getEmojiForIcon(icon)} {icon}
+                          {getIconLabel(icon)}
                         </option>
                       ))}
                     </select>
@@ -229,9 +253,9 @@ export default function ServiceManagement() {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div
-                      className={`text-4xl w-16 h-16 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}
+                      className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}
                     >
-                      {getEmojiForIcon(service.icon)}
+                      {getIconForService(service.icon)}
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
@@ -273,7 +297,9 @@ export default function ServiceManagement() {
           {/* Empty State */}
           {services.length === 0 && !showForm && (
             <div className="text-center py-16">
-              <div className="text-6xl mb-4">🚗</div>
+              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Car className="w-10 h-10 text-slate-400" />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 No Services Added
               </h3>

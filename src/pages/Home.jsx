@@ -1,314 +1,700 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   CheckCircle,
   Clock,
   Shield,
+  Wrench,
+  Users,
+  Star,
+  Calendar,
+  Phone,
+  Sparkles,
+  Zap,
+  Award,
+  Target,
+  HeartHandshake,
+  Car,
+  Settings,
+  BadgeCheck,
+  ChevronDown,
   MapPin,
-  ChevronLeft,
-  ChevronRight,
+  FileCheck,
+  CreditCard,
+  ClipboardList,
+  MousePointerClick,
+  Play,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { BookingContext } from "../context/BookingContext";
+
+// Custom hook for animated counter
+function useCountUp(end, duration = 2000, startOnView = true) {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!startOnView) {
+      setHasStarted(true);
+    }
+  }, [startOnView]);
+
+  useEffect(() => {
+    if (startOnView && ref.current) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && !hasStarted) {
+            setHasStarted(true);
+          }
+        },
+        { threshold: 0.5 },
+      );
+      observer.observe(ref.current);
+      return () => observer.disconnect();
+    }
+  }, [hasStarted, startOnView]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    let startTime;
+    const numericEnd = parseInt(end.replace(/\D/g, ""));
+
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easeOut * numericEnd));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [end, duration, hasStarted]);
+
+  return { count, ref };
+}
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { services } = useContext(BookingContext);
 
   const slides = [
     {
-      title: "General Maintenance",
-      subtitle: "Regular checkups and preventive care for your vehicle",
+      title: "Professional Vehicle Care",
+      subtitle: "Expert maintenance and repair services",
       description:
-        "Keep your car running smoothly with our comprehensive maintenance services",
-      image: "/src/assets/Main Slide.jpg",
+        "Trust our certified technicians to keep your vehicle running at peak performance",
     },
     {
-      title: "Engine Service",
-      subtitle: "Expert engine diagnostics and repair",
+      title: "Quick and Reliable",
+      subtitle: "Same-day service available",
       description:
-        "Professional technicians ensure your engine performs at peak efficiency",
-      image: "/src/assets/maintenance.jpg",
+        "Get back on the road faster with our efficient service process",
     },
     {
-      title: "Electrical Systems",
-      subtitle: "Battery and electrical issue solutions",
+      title: "Quality Guaranteed",
+      subtitle: "Genuine parts and warranty",
       description:
-        "Advanced diagnostics and quality repairs for all electrical components",
-      image: "/src/assets/electrical.jpg",
-    },
-    {
-      title: "Fluid Services",
-      subtitle: "Oil, coolant, and transmission fluids",
-      description:
-        "Essential fluid maintenance to extend your vehicle's lifespan",
-      image: "/src/assets/tires.jpg",
+        "We use only certified parts and stand behind every repair we make",
     },
   ];
 
-  // Auto-rotate carousel every 5 seconds
+  const stats = [
+    {
+      value: "2,500+",
+      label: "Services Completed",
+      icon: Wrench,
+      color: "sky",
+    },
+    {
+      value: "98%",
+      label: "Customer Satisfaction",
+      icon: Star,
+      color: "amber",
+    },
+    {
+      value: "24/7",
+      label: "Support Available",
+      icon: Phone,
+      color: "emerald",
+    },
+    { value: "50+", label: "Expert Technicians", icon: Users, color: "violet" },
+  ];
+
+  const features = [
+    {
+      icon: Zap,
+      title: "Quick Booking",
+      description:
+        "Book your service in under 2 minutes with our streamlined online system",
+      color: "from-amber-500 to-orange-500",
+    },
+    {
+      icon: BadgeCheck,
+      title: "Certified Experts",
+      description: "All technicians are professionally trained and certified",
+      color: "from-emerald-500 to-teal-500",
+    },
+    {
+      icon: Calendar,
+      title: "Flexible Scheduling",
+      description:
+        "Choose a time that works for you with our flexible appointment slots",
+      color: "from-sky-500 to-blue-500",
+    },
+    {
+      icon: Award,
+      title: "Quality Assurance",
+      description: "Every service is backed by our satisfaction guarantee",
+      color: "from-violet-500 to-purple-500",
+    },
+  ];
+
+  const testimonials = [
+    {
+      name: "John Smith",
+      role: "Toyota Owner",
+      content:
+        "Excellent service! My car runs like new after the maintenance. Highly recommend!",
+      rating: 5,
+    },
+    {
+      name: "Sarah Johnson",
+      role: "Honda Owner",
+      content:
+        "Fast, professional, and affordable. The online booking system is super convenient.",
+      rating: 5,
+    },
+    {
+      name: "Mike Davis",
+      role: "BMW Owner",
+      content:
+        "Best auto service I've ever experienced. The team really knows their stuff!",
+      rating: 5,
+    },
+  ];
+
+  const howItWorks = [
+    {
+      step: 1,
+      icon: MousePointerClick,
+      title: "Choose Service",
+      description: "Browse our services and select what your vehicle needs",
+      color: "from-sky-500 to-cyan-500",
+    },
+    {
+      step: 2,
+      icon: Calendar,
+      title: "Book Appointment",
+      description: "Pick a convenient date and time for your service",
+      color: "from-violet-500 to-purple-500",
+    },
+    {
+      step: 3,
+      icon: Car,
+      title: "Drop Off Vehicle",
+      description:
+        "Bring your vehicle to our service center at the scheduled time",
+      color: "from-amber-500 to-orange-500",
+    },
+    {
+      step: 4,
+      icon: FileCheck,
+      title: "Get It Done",
+      description: "We service your vehicle and notify you when it's ready",
+      color: "from-emerald-500 to-teal-500",
+    },
+  ];
+
+  const faqs = [
+    {
+      question: "How long does a typical service take?",
+      answer:
+        "Most standard services take 1-3 hours. Complex repairs may take longer, and we'll provide an estimate upfront.",
+    },
+    {
+      question: "Do you provide pickup and drop-off service?",
+      answer:
+        "Yes! We offer complimentary pickup and drop-off within a 10-mile radius for services over $100.",
+    },
+    {
+      question: "What payment methods do you accept?",
+      answer:
+        "We accept all major credit cards, debit cards, cash, and digital wallets like Apple Pay and Google Pay.",
+    },
+    {
+      question: "Is there a warranty on repairs?",
+      answer:
+        "Absolutely! All our repairs come with a 12-month or 12,000-mile warranty, whichever comes first.",
+    },
+  ];
+
+  const [openFaq, setOpenFaq] = useState(null);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    }, 6000);
     return () => clearInterval(interval);
   }, [slides.length]);
-
-  const handlePrev = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
-
-  const handleNext = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
 
   return (
     <>
       <Header />
 
-      <main>
-        {/* Full-Page Carousel Hero Section */}
-        <section className="relative w-full h-screen overflow-hidden">
-          {/* Carousel slides */}
-          {slides.map((slide, idx) => (
+      <main className="bg-slate-50">
+        {/* Hero Section */}
+        <section className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
             <div
-              key={idx}
-              className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ${
-                idx === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
-              }`}
+              className="absolute inset-0"
               style={{
-                backgroundImage: `url('${slide.image}')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
               }}
-            >
-              {/* Dark overlay for text readability */}
-              <div className="absolute inset-0 bg-black/40"></div>
+            />
+          </div>
 
-              <div className="max-w-6xl mx-auto px-4 relative z-10 w-full h-full flex items-center">
-                <div className="w-full">
-                  {/* Content */}
-                  <div className="animate-fade-in text-white max-w-2xl">
-                    <div className="mb-6 inline-block">
-                      <span className="bg-white/20 px-6 py-3 rounded-full text-sm font-semibold backdrop-blur-md">
-                        ⚡ Premium Service
-                      </span>
-                    </div>
-                    <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight drop-shadow-lg">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Content */}
+              <div className="animate-fade-in">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-sky-500/10 border border-sky-500/20 rounded-full text-sky-400 text-sm font-medium mb-6">
+                  <span className="w-2 h-2 bg-sky-400 rounded-full animate-pulse-slow"></span>
+                  Professional Auto Service
+                </div>
+
+                <div className="relative h-32 mb-6 overflow-hidden">
+                  {slides.map((slide, idx) => (
+                    <h1
+                      key={idx}
+                      className={`absolute inset-0 text-4xl md:text-5xl lg:text-6xl font-semibold text-white leading-tight transition-all duration-700 ${
+                        idx === currentSlide
+                          ? "opacity-100 translate-y-0"
+                          : "opacity-0 translate-y-8"
+                      }`}
+                    >
                       {slide.title}
                     </h1>
-                    <h2 className="text-2xl md:text-3xl text-white/95 mb-6 font-semibold drop-shadow-md">
-                      {slide.subtitle}
-                    </h2>
-                    <p className="text-lg md:text-xl text-white/90 mb-8 leading-relaxed drop-shadow-md">
+                  ))}
+                </div>
+
+                <div className="relative h-20 mb-8 overflow-hidden">
+                  {slides.map((slide, idx) => (
+                    <p
+                      key={idx}
+                      className={`absolute inset-0 text-lg text-slate-400 leading-relaxed transition-all duration-700 delay-100 ${
+                        idx === currentSlide
+                          ? "opacity-100 translate-y-0"
+                          : "opacity-0 translate-y-8"
+                      }`}
+                    >
                       {slide.description}
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Link
-                        to="/book"
-                        className="btn-primary flex items-center justify-center space-x-2 text-lg py-4 w-fit"
-                      >
-                        <span>Book Service Now</span>
-                        <ArrowRight size={24} />
-                      </Link>
-                      <Link
-                        to="/services"
-                        className="btn-outline text-white border-white hover:bg-white hover:text-blue-600 flex items-center justify-center space-x-2 text-lg py-4 w-fit"
-                      >
-                        <span>Learn More</span>
-                      </Link>
-                    </div>
-                  </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  <Link
+                    to="/services"
+                    className="btn-primary flex items-center gap-2 px-6 py-3"
+                  >
+                    <span>View Services</span>
+                    <ArrowRight size={18} />
+                  </Link>
+                  <Link
+                    to="/track"
+                    className="btn-ghost text-white border border-slate-600 hover:bg-slate-800 flex items-center gap-2 px-6 py-3"
+                  >
+                    <span>Track Booking</span>
+                  </Link>
+                </div>
+
+                {/* Slide Indicators */}
+                <div className="flex gap-2 mt-8">
+                  {slides.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentSlide(idx)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        idx === currentSlide
+                          ? "bg-sky-500 w-8"
+                          : "bg-slate-600 w-4 hover:bg-slate-500"
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
+
+              {/* Right Content - Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                {stats.map((stat, idx) => {
+                  const colorClasses = {
+                    sky: "text-sky-400 bg-sky-400/10 border-sky-400/20",
+                    amber: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+                    emerald:
+                      "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+                    violet:
+                      "text-violet-400 bg-violet-400/10 border-violet-400/20",
+                  };
+                  // eslint-disable-next-line react-hooks/rules-of-hooks
+                  const { count, ref } = useCountUp(stat.value, 2000);
+                  const suffix = stat.value.replace(/[0-9,]/g, "");
+                  return (
+                    <div
+                      key={idx}
+                      ref={ref}
+                      className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-6 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105 group"
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                      <div
+                        className={`w-12 h-12 ${colorClasses[stat.color]} rounded-xl flex items-center justify-center mb-4 border transition-all group-hover:scale-110`}
+                      >
+                        <stat.icon className="w-6 h-6" />
+                      </div>
+                      <p className="text-3xl md:text-4xl font-bold text-white mb-1">
+                        {count.toLocaleString()}
+                        {suffix}
+                      </p>
+                      <p className="text-sm text-slate-400">{stat.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-
-          {/* Navigation Buttons */}
-          <button
-            onClick={handlePrev}
-            className="absolute left-6 md:left-12 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-800 p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110"
-          >
-            <ChevronLeft size={32} />
-          </button>
-          <button
-            onClick={handleNext}
-            className="absolute right-6 md:right-12 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-800 p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110"
-          >
-            <ChevronRight size={32} />
-          </button>
-
-          {/* Slide Indicators */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-30">
-            {slides.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentSlide(idx)}
-                className={`transition-all duration-300 rounded-full backdrop-blur-sm ${
-                  idx === currentSlide
-                    ? "bg-white w-10 h-4 shadow-lg"
-                    : "bg-white/50 w-4 h-4 hover:bg-white/75"
-                }`}
-              />
-            ))}
           </div>
-        </section>
 
-        {/* Quick Stats Section */}
-        <section className="py-16 px-4 bg-gradient-to-b from-gray-900 to-black">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl p-8 shadow-lg text-white">
-                <p className="text-5xl font-bold mb-2">500+</p>
-                <p className="text-lg text-blue-200">Happy Customers</p>
-              </div>
-              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-8 shadow-lg text-white">
-                <p className="text-5xl font-bold mb-2">98%</p>
-                <p className="text-lg text-gray-300">Satisfaction Rate</p>
-              </div>
-              <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-8 shadow-lg text-white">
-                <p className="text-5xl font-bold mb-2">24/7</p>
-                <p className="text-lg text-gray-300">Customer Support</p>
-              </div>
-            </div>
+          {/* Wave divider */}
+          <div className="absolute bottom-0 left-0 right-0">
+            <svg viewBox="0 0 1440 120" fill="none" className="w-full h-auto">
+              <path
+                fill="#f8fafc"
+                d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
+              ></path>
+            </svg>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-24 px-4 bg-gradient-to-b from-gray-50 via-gray-100 to-gray-50">
+        <section className="py-24 px-4">
           <div className="max-w-7xl mx-auto">
-            <h2 className="section-title text-center mb-4">
-              Why Choose VehicleCare?
-            </h2>
-            <p className="text-center text-gray-600 mb-16 max-w-2xl mx-auto text-lg">
-              We provide comprehensive vehicle maintenance services with the
-              highest quality standards.
-            </p>
+            <div className="text-center mb-16">
+              <span className="bg-gradient-to-r from-sky-100 to-cyan-100 px-5 py-2 rounded-full text-sm font-bold text-sky-700 inline-block mb-4">
+                Why Choose Us
+              </span>
+              <h2 className="text-4xl font-bold mb-4">
+                <span className="gradient-text">Experience the Difference</span>
+              </h2>
+              <p className="text-slate-600 max-w-2xl mx-auto text-lg">
+                We combine expertise, quality, and convenience to deliver the
+                best vehicle service experience
+              </p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                {
-                  icon: Clock,
-                  title: "Quick Booking",
-                  description:
-                    "Reserve your slot in just 2 minutes. Easy online booking process.",
-                  color: "from-blue-900 to-blue-800",
-                },
-                {
-                  icon: Shield,
-                  title: "Expert Technicians",
-                  description:
-                    "Certified professionals with years of experience in vehicle maintenance.",
-                  color: "from-slate-700 to-slate-900",
-                },
-                {
-                  icon: MapPin,
-                  title: "Multiple Locations",
-                  description:
-                    "Service centers conveniently located across the city.",
-                  color: "from-gray-800 to-gray-900",
-                },
-                {
-                  icon: CheckCircle,
-                  title: "Quality Guaranteed",
-                  description:
-                    "We use genuine parts and provide warranty on all services.",
-                  color: "from-slate-700 to-slate-800",
-                },
-              ].map((feature, idx) => (
-                <div key={idx} className="card group border-0 shadow-medium">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {features.map((feature, idx) => (
+                <div
+                  key={idx}
+                  className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
+                >
                   <div
-                    className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} p-3 mb-4 group-hover:shadow-glow transition-all duration-300`}
+                    className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform`}
                   >
-                    <feature.icon size={32} className="text-white" />
+                    <feature.icon className="w-7 h-7 text-white" />
                   </div>
-                  <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm">{feature.description}</p>
+                  <h3 className="font-bold text-xl mb-3 text-slate-900">
+                    {feature.title}
+                  </h3>
+                  <p className="text-slate-600">{feature.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Popular Services Section */}
-        <section className="py-24 px-4">
+        {/* How It Works Section */}
+        <section className="py-24 px-4 bg-gradient-to-b from-slate-50 to-white">
           <div className="max-w-7xl mx-auto">
-            <h2 className="section-title mb-4">Our Popular Services</h2>
-            <p className="text-gray-600 mb-16 text-lg">
-              Comprehensive vehicle maintenance and repair solutions
-            </p>
+            <div className="text-center mb-16">
+              <span className="bg-gradient-to-r from-violet-100 to-purple-100 px-5 py-2 rounded-full text-sm font-bold text-violet-700 inline-block mb-4">
+                Simple Process
+              </span>
+              <h2 className="text-4xl font-bold mb-4">
+                <span className="gradient-text">How It Works</span>
+              </h2>
+              <p className="text-slate-600 max-w-2xl mx-auto text-lg">
+                Get your vehicle serviced in just 4 easy steps
+              </p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              {[
-                {
-                  emoji: "🔧",
-                  name: "Regular Maintenance",
-                  price: "$99",
-                  color: "from-blue-900 to-blue-800",
-                },
-                {
-                  emoji: "💧",
-                  name: "Oil Change",
-                  price: "$49",
-                  color: "from-slate-700 to-slate-900",
-                },
-                {
-                  emoji: "⚡",
-                  name: "Brake Check",
-                  price: "$79",
-                  color: "from-gray-800 to-gray-900",
-                },
-              ].map((service, idx) => (
-                <div
-                  key={idx}
-                  className="card-interactive group border-gray-300 overflow-hidden"
-                >
-                  <div
-                    className={`h-24 bg-gradient-to-br ${service.color} flex items-center justify-center text-6xl group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    {service.emoji}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {howItWorks.map((item, idx) => (
+                <div key={idx} className="relative">
+                  {/* Connector Line */}
+                  {idx < howItWorks.length - 1 && (
+                    <div className="hidden lg:block absolute top-12 left-1/2 w-full h-0.5 bg-gradient-to-r from-slate-300 to-slate-200" />
+                  )}
+
+                  <div className="relative glass-card p-6 text-center group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                    {/* Step Number */}
+                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center text-sm font-bold text-slate-700 border border-slate-200">
+                      {item.step}
+                    </div>
+
+                    <div
+                      className={`w-16 h-16 mx-auto mb-5 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
+                    >
+                      <item.icon className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="font-bold text-lg mb-2 text-slate-900">
+                      {item.title}
+                    </h3>
+                    <p className="text-slate-600 text-sm">{item.description}</p>
                   </div>
-                  <h3 className="font-bold text-lg mb-2 mt-4">
-                    {service.name}
-                  </h3>
-                  <p className="text-blue-900 font-bold text-2xl">
-                    {service.price}
-                  </p>
                 </div>
               ))}
             </div>
 
-            <div className="text-center">
+            <div className="text-center mt-12">
               <Link
                 to="/services"
-                className="btn-primary inline-flex items-center space-x-2"
+                className="btn-primary inline-flex items-center gap-2 px-8 py-4 text-lg"
               >
-                <span>View All Services</span>
-                <ArrowRight size={20} />
+                <Play size={20} />
+                Get Started Now
               </Link>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="bg-gradient-to-r from-blue-900 via-blue-800 to-black text-white py-24 px-4 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-slate-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+        {/* Services Section */}
+        <section className="py-24 px-4 bg-gradient-to-b from-white to-slate-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+              <div>
+                <span className="bg-gradient-to-r from-sky-100 to-cyan-100 px-5 py-2 rounded-full text-sm font-bold text-sky-700 inline-block mb-4">
+                  Our Services
+                </span>
+                <h2 className="text-4xl font-bold mb-4">
+                  <span className="gradient-text">What We Offer</span>
+                </h2>
+                <p className="text-slate-600 max-w-xl text-lg">
+                  Comprehensive vehicle maintenance and repair solutions for all
+                  your needs
+                </p>
+              </div>
+              <Link
+                to="/services"
+                className="btn-primary mt-6 md:mt-0 w-fit flex items-center gap-2"
+              >
+                View All Services
+                <ArrowRight size={16} />
+              </Link>
+            </div>
 
-          <div className="max-w-4xl mx-auto text-center relative z-10">
-            <h2 className="text-5xl font-bold mb-6">
-              Ready to Book Your Service?
-            </h2>
-            <p className="text-xl text-blue-200 mb-8">
-              Get your vehicle serviced by experts. Quick, reliable, and
-              affordable.
-            </p>
-            <Link
-              to="/book"
-              className="bg-white text-blue-900 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 transition inline-block transform hover:scale-105 duration-300 shadow-lg hover:shadow-2xl"
-            >
-              Book Now
-            </Link>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {services.slice(0, 6).map((service, idx) => {
+                const gradients = [
+                  "from-sky-500 to-cyan-500",
+                  "from-emerald-500 to-teal-500",
+                  "from-violet-500 to-purple-500",
+                  "from-orange-500 to-red-500",
+                  "from-amber-500 to-orange-500",
+                  "from-indigo-500 to-violet-500",
+                ];
+                return (
+                  <Link
+                    key={service._id || idx}
+                    to="/services"
+                    className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`w-14 h-14 bg-gradient-to-br ${gradients[idx]} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg`}
+                      >
+                        <Wrench className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-lg mb-1 truncate text-slate-900">
+                          {service.name}
+                        </h3>
+                        <p className="text-slate-600 text-sm mb-3 line-clamp-2">
+                          {service.description}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xl font-bold gradient-text">
+                            {service.price}
+                          </p>
+                          <span className="text-sky-500 text-sm font-medium group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                            Book Now <ArrowRight size={14} />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-24 px-4 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="bg-gradient-to-r from-amber-100 to-orange-100 px-5 py-2 rounded-full text-sm font-bold text-amber-700 inline-block mb-4">
+                Testimonials
+              </span>
+              <h2 className="text-4xl font-bold mb-4">
+                <span className="gradient-text">What Our Customers Say</span>
+              </h2>
+              <p className="text-slate-600 max-w-2xl mx-auto text-lg">
+                Don't just take our word for it - hear from our satisfied
+                customers
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {testimonials.map((testimonial, idx) => (
+                <div
+                  key={idx}
+                  className="glass-card p-6 hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={18}
+                        className="fill-amber-400 text-amber-400"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-slate-700 mb-6 italic">
+                    "{testimonial.content}"
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+                      {testimonial.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">
+                        {testimonial.name}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {testimonial.role}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-24 px-4 bg-gradient-to-b from-white to-slate-50">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="bg-gradient-to-r from-emerald-100 to-teal-100 px-5 py-2 rounded-full text-sm font-bold text-emerald-700 inline-block mb-4">
+                Got Questions?
+              </span>
+              <h2 className="text-4xl font-bold mb-4">
+                <span className="gradient-text">
+                  Frequently Asked Questions
+                </span>
+              </h2>
+              <p className="text-slate-600 text-lg">
+                Find answers to common questions about our services
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {faqs.map((faq, idx) => (
+                <div key={idx} className="glass-card overflow-hidden">
+                  <button
+                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                    className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
+                  >
+                    <span className="font-semibold text-slate-900 text-lg">
+                      {faq.question}
+                    </span>
+                    <ChevronDown
+                      size={20}
+                      className={`text-slate-500 transition-transform duration-300 flex-shrink-0 ${
+                        openFaq === idx ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                      openFaq === idx ? "max-h-40" : "max-h-0"
+                    }`}
+                  >
+                    <p className="px-6 pb-6 text-slate-600 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-10">
+              <p className="text-slate-600 mb-4">Still have questions?</p>
+              <a
+                href="tel:+15551234567"
+                className="btn-outline inline-flex items-center gap-2"
+              >
+                <Phone size={18} />
+                Contact Support
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-24 px-4 bg-gradient-mesh">
+          <div className="max-w-5xl mx-auto">
+            <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-10 md:p-16 text-center overflow-hidden">
+              {/* Background decorations */}
+              <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/20 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl"></div>
+
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500/20 border border-sky-500/30 rounded-full text-sky-400 text-sm font-medium mb-6">
+                  <Sparkles size={16} />
+                  Ready to Get Started?
+                </div>
+                <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                  Book Your Service Today
+                </h2>
+                <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+                  Experience professional vehicle care with our expert
+                  technicians. Quality service, guaranteed satisfaction.
+                </p>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Link
+                    to="/services"
+                    className="btn-primary px-10 py-4 text-lg flex items-center gap-2 shadow-lg shadow-sky-500/30"
+                  >
+                    <Sparkles size={20} />
+                    Book Now
+                  </Link>
+                  <Link
+                    to="/track"
+                    className="px-10 py-4 text-lg text-white border-2 border-slate-600 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2"
+                  >
+                    Track Existing Booking
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
