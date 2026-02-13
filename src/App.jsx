@@ -22,8 +22,7 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import MyBookings from "./pages/MyBookings";
 import AdminDashboard from "./pages/AdminDashboard";
-import ManageBookings from "./pages/ManageBookings";
-import ServiceManagement from "./pages/ServiceManagement";
+import Reviews from "./pages/Reviews";
 
 function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -312,8 +311,9 @@ function App() {
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/reviews" element={<Reviews />} />
 
-            {/* Admin Routes */}
+            {/* Admin Routes - All admin functionality is in: AdminDashboard */}
             <Route
               path="/admin/login"
               element={<Navigate to="/signin" replace />}
@@ -326,21 +326,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Redirect all admin sub-routes to dashboard */}
             <Route
               path="/admin/bookings"
-              element={
-                <ProtectedRoute>
-                  <ManageBookings />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/admin/dashboard" replace />}
             />
             <Route
               path="/admin/services"
-              element={
-                <ProtectedRoute>
-                  <ServiceManagement />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/admin/dashboard" replace />}
+            />
+            <Route
+              path="/admin/users"
+              element={<Navigate to="/admin/dashboard" replace />}
+            />
+            <Route
+              path="/admin/reviews"
+              element={<Navigate to="/admin/dashboard" replace />}
             />
 
             {/* Fallback */}

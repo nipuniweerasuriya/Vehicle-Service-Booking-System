@@ -1,4 +1,4 @@
-import { useState, useContext, useMemo } from "react";
+import { useState, useContext, useMemo, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -9,19 +9,55 @@ import {
   Calendar,
   SortAsc,
   SortDesc,
+  Activity,
+  RefreshCw,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { BookingContext } from "../context/BookingContext";
+import { bookingsAPI } from "../api";
+
+const progressStages = [
+  { value: "Waiting", label: "Waiting", progress: 0 },
+  { value: "Received", label: "Vehicle Received", progress: 20 },
+  { value: "Inspection", label: "Under Inspection", progress: 40 },
+  { value: "InProgress", label: "Work In Progress", progress: 60 },
+  { value: "QualityCheck", label: "Quality Check", progress: 80 },
+  { value: "Completed", label: "Completed", progress: 100 },
+];
 
 export default function ManageBookings() {
-  const { bookings, updateBookingStatus } = useContext(BookingContext);
+  const { bookings, updateBookingStatus, fetchBookings } =
+    useContext(BookingContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortField, setSortField] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [progressModal, setProgressModal] = useState(null);
+  const [updatingProgress, setUpdatingProgress] = useState(false);
+
+  const handleProgressUpdate = async (bookingId, stage) => {
+    setUpdatingProgress(true);
+    try {
+      const stageInfo = progressStages.find((s) => s.value === stage);
+      await bookingsAPI.updateProgress(bookingId, stageInfo.progress, stage);
+
+      // If completed, also update status
+      if (stage === "Completed") {
+        await bookingsAPI.updateStatus(bookingId, "Completed");
+      }
+
+      fetchBookings();
+      setProgressModal(null);
+    } catch (error) {
+      console.error("Failed to update progress:", error);
+      alert("Failed to update progress");
+    } finally {
+      setUpdatingProgress(false);
+    }
+  };
 
   // Smart filtering and sorting
   const filteredBookings = useMemo(() => {
@@ -319,14 +355,24 @@ export default function ManageBookings() {
                               </>
                             )}
                             {booking.status === "Approved" && (
-                              <button
-                                onClick={() =>
-                                  handleStatusChange(booking.id, "Completed")
-                                }
-                                className="px-2 py-1 rounded text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
-                              >
-                                Mark Complete
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => setProgressModal(booking.id)}
+                                  className="px-2 py-1 rounded text-xs font-medium text-sky-600 bg-sky-50 hover:bg-sky-100 transition-colors flex items-center gap-1"
+                                  title="Update Progress"
+                                >
+                                  <Activity size={12} />
+                                  Progress
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleStatusChange(booking.id, "Completed")
+                                  }
+                                  className="px-2 py-1 rounded text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                                >
+                                  Complete
+                                </button>
+                              </>
                             )}
                             {/* Dropdown for all options */}
                             <div className="relative">
@@ -424,6 +470,68 @@ export default function ManageBookings() {
           </div>
         </div>
       </main>
+
+      {/* Progress Update Modal */}
+      {progressModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-sky-600" />
+                Update Progress
+              </h3>
+              <button
+                onClick={() => setProgressModal(null)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-600 mb-4">
+              Select the current stage for booking{" "}
+              <span className="font-mono font-medium text-sky-600">
+                {progressModal}
+              </span>
+            </p>
+
+            <div className="space-y-2">
+              {progressStages.map((stage) => (
+                <button
+                  key={stage.value}
+                  onClick={() =>
+                    handleProgressUpdate(progressModal, stage.value)
+                  }
+                  disabled={updatingProgress}
+                  className="w-full p-3 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50 transition-all flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-100 group-hover:bg-sky-100 rounded-lg flex items-center justify-center transition-colors">
+                      <span className="text-sm font-bold text-slate-600 group-hover:text-sky-600">
+                        {stage.progress}%
+                      </span>
+                    </div>
+                    <span className="font-medium text-slate-700 group-hover:text-sky-700">
+                      {stage.label}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className="text-slate-400 group-hover:text-sky-500 -rotate-90"
+                  />
+                </button>
+              ))}
+            </div>
+
+            {updatingProgress && (
+              <div className="mt-4 flex items-center justify-center gap-2 text-sky-600">
+                <RefreshCw size={16} className="animate-spin" />
+                <span className="text-sm">Updating...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>

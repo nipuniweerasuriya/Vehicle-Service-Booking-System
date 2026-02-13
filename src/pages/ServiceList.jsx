@@ -16,6 +16,13 @@ import {
   CheckCircle,
   ChevronRight,
   Sparkles,
+  ClipboardCheck,
+  Search,
+  Target,
+  Star,
+  Timer,
+  Tag,
+  Filter,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -153,7 +160,41 @@ export default function ServiceList() {
     Disc3: Disc3,
     Battery: Battery,
     Wind: Wind,
+    ClipboardCheck: ClipboardCheck,
+    Search: Search,
+    Target: Target,
+    Sparkles: Sparkles,
+    Star: Star,
+    Car: Car,
+    Clock: Clock,
+    Calendar: Calendar,
+    Shield: CheckCircle,
   };
+
+  // Category colors
+  const categoryColors = {
+    maintenance: {
+      bg: "from-blue-500 to-cyan-500",
+      light: "bg-blue-100 text-blue-700",
+    },
+    repair: {
+      bg: "from-amber-500 to-orange-500",
+      light: "bg-amber-100 text-amber-700",
+    },
+    inspection: {
+      bg: "from-violet-500 to-purple-500",
+      light: "bg-violet-100 text-violet-700",
+    },
+    comfort: {
+      bg: "from-emerald-500 to-teal-500",
+      light: "bg-emerald-100 text-emerald-700",
+    },
+  };
+
+  // Filter only active services
+  const activeServices = services.filter((s) => s.status !== "inactive");
+  const featuredServices = activeServices.filter((s) => s.featured);
+  const regularServices = activeServices.filter((s) => !s.featured);
 
   return (
     <>
@@ -179,47 +220,165 @@ export default function ServiceList() {
             </p>
           </div>
 
-          {/* Services Grid */}
+          {/* Featured Services */}
+          {featuredServices.length > 0 && (
+            <div className="mb-12">
+              <div className="flex items-center gap-2 mb-6">
+                <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                <h2 className="text-xl font-bold text-slate-900">
+                  Featured Services
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredServices.map((service) => {
+                  const IconComponent = iconMap[service.icon] || Wrench;
+                  const catColors =
+                    categoryColors[service.category] ||
+                    categoryColors.maintenance;
+                  const price =
+                    typeof service.price === "number"
+                      ? service.price
+                      : parseFloat(service.price) || 0;
+                  const finalPrice =
+                    service.discount > 0
+                      ? (price * (1 - service.discount / 100)).toFixed(0)
+                      : price;
+
+                  return (
+                    <div
+                      key={service._id || service.id}
+                      className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative border-2 border-amber-200 bg-gradient-to-br from-amber-50/50 to-white"
+                    >
+                      {/* Featured badge */}
+                      <div className="absolute -top-3 left-4 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                        <Star size={12} className="fill-white" /> Featured
+                      </div>
+
+                      {/* Discount badge */}
+                      {service.discount > 0 && (
+                        <div className="absolute -top-3 right-4 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
+                          -{service.discount}% OFF
+                        </div>
+                      )}
+
+                      <div className="flex items-start justify-between mb-4 mt-2">
+                        <div
+                          className={`p-3 bg-gradient-to-br ${catColors.bg} rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                        >
+                          <IconComponent className="text-white" size={28} />
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold gradient-text">
+                            ${finalPrice}
+                          </div>
+                          {service.discount > 0 && (
+                            <div className="text-sm text-slate-400 line-through">
+                              ${price}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Category badge */}
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 capitalize ${catColors.light}`}
+                      >
+                        {service.category}
+                      </span>
+
+                      <h3 className="font-bold text-xl mb-2 text-slate-900">
+                        {service.name}
+                      </h3>
+                      <p className="text-slate-600 text-sm mb-4 line-clamp-2">
+                        {service.description}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-200/50">
+                        <div className="flex items-center gap-1 text-sm text-slate-500">
+                          <Timer size={14} />
+                          <span>{service.duration || 60} min</span>
+                        </div>
+                        <button
+                          onClick={() => openBookingModal(service)}
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-semibold text-sm
+                                   hover:from-amber-600 hover:to-orange-600 transition-all duration-300 flex items-center gap-2
+                                   shadow-md shadow-amber-500/30 hover:shadow-lg group-hover:scale-105"
+                        >
+                          Book Now
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* All Services Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {services.map((service, idx) => {
+            {regularServices.map((service) => {
               const IconComponent = iconMap[service.icon] || Wrench;
-              const gradients = [
-                "from-sky-500 to-cyan-500",
-                "from-emerald-500 to-teal-500",
-                "from-violet-500 to-purple-500",
-                "from-orange-500 to-red-500",
-                "from-amber-500 to-orange-500",
-                "from-indigo-500 to-violet-500",
-              ];
-              const gradient = gradients[idx % gradients.length];
+              const catColors =
+                categoryColors[service.category] || categoryColors.maintenance;
+              const price =
+                typeof service.price === "number"
+                  ? service.price
+                  : parseFloat(service.price) || 0;
+              const finalPrice =
+                service.discount > 0
+                  ? (price * (1 - service.discount / 100)).toFixed(0)
+                  : price;
 
               return (
                 <div
                   key={service._id || service.id}
-                  className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                  className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative"
                 >
+                  {/* Discount badge */}
+                  {service.discount > 0 && (
+                    <div className="absolute -top-3 right-4 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
+                      -{service.discount}% OFF
+                    </div>
+                  )}
+
                   <div className="flex items-start justify-between mb-4">
                     <div
-                      className={`p-3 bg-gradient-to-br ${gradient} rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      className={`p-3 bg-gradient-to-br ${catColors.bg} rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
                     >
                       <IconComponent className="text-white" size={28} />
                     </div>
-                    <div className="text-2xl font-bold gradient-text">
-                      {service.price}
+                    <div className="text-right">
+                      <div className="text-2xl font-bold gradient-text">
+                        ${finalPrice}
+                      </div>
+                      {service.discount > 0 && (
+                        <div className="text-sm text-slate-400 line-through">
+                          ${price}
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Category badge */}
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 capitalize ${catColors.light}`}
+                  >
+                    {service.category}
+                  </span>
 
                   <h3 className="font-bold text-xl mb-2 text-slate-900">
                     {service.name}
                   </h3>
-                  <p className="text-slate-600 text-sm mb-6">
+                  <p className="text-slate-600 text-sm mb-4 line-clamp-2">
                     {service.description}
                   </p>
 
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200/50">
-                    <span className="text-sm font-medium text-slate-500">
-                      30-60 min
-                    </span>
+                    <div className="flex items-center gap-1 text-sm text-slate-500">
+                      <Timer size={14} />
+                      <span>{service.duration || 60} min</span>
+                    </div>
                     <button
                       onClick={() => openBookingModal(service)}
                       className="px-4 py-2 bg-gradient-to-r from-sky-500 to-cyan-500 text-white rounded-lg font-semibold text-sm

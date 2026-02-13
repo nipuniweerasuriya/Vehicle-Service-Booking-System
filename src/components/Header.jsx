@@ -3,7 +3,7 @@ import {
   Menu,
   X,
   LogOut,
-  Settings,
+  Wrench,
   LayoutDashboard,
   CalendarCheck,
   User,
@@ -17,8 +17,13 @@ import { AuthContext } from "../context/AuthContext";
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const { isAdminLoggedIn, logout, user, isUserLoggedIn, logoutUser } =
     useContext(AuthContext);
+
+  const adminUser = JSON.parse(
+    localStorage.getItem("adminUser") || '{"name": "Admin"}',
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -72,6 +77,12 @@ export default function Header() {
                   className={`px-4 py-2 rounded-xl ${navLinkClass("/services")}`}
                 >
                   Services
+                </Link>
+                <Link
+                  to="/reviews"
+                  className={`px-4 py-2 rounded-xl ${navLinkClass("/reviews")}`}
+                >
+                  Reviews
                 </Link>
                 <Link
                   to="/track"
@@ -155,37 +166,68 @@ export default function Header() {
                 )}
               </>
             ) : (
-              <>
-                <Link
-                  to="/admin/dashboard"
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 ${navLinkClass("/admin/dashboard")}`}
-                >
-                  <LayoutDashboard size={16} />
-                  Dashboard
-                </Link>
-                <Link
-                  to="/admin/bookings"
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 ${navLinkClass("/admin/bookings")}`}
-                >
-                  <CalendarCheck size={16} />
-                  Bookings
-                </Link>
-                <Link
-                  to="/admin/services"
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 ${navLinkClass("/admin/services")}`}
-                >
-                  <Settings size={16} />
-                  Services
-                </Link>
-                <div className="w-px h-6 bg-slate-200 mx-2"></div>
+              <div className="relative">
                 <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  onClick={() => setAdminMenuOpen(!adminMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
                 >
-                  <LogOut size={16} />
-                  Logout
+                  <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                    {(adminUser.name || "A").charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">
+                    {adminUser.name || "Admin"}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`text-slate-400 transition-transform ${adminMenuOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
-              </>
+                {adminMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setAdminMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                      <Link
+                        to="/admin/dashboard"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                        onClick={() => setAdminMenuOpen(false)}
+                      >
+                        <LayoutDashboard size={16} />
+                        Dashboard
+                      </Link>
+                      <Link
+                        to="/admin/bookings"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                        onClick={() => setAdminMenuOpen(false)}
+                      >
+                        <CalendarCheck size={16} />
+                        Bookings
+                      </Link>
+                      <Link
+                        to="/admin/services"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                        onClick={() => setAdminMenuOpen(false)}
+                      >
+                        <Wrench size={16} />
+                        Services
+                      </Link>
+                      <div className="border-t border-slate-100 my-1"></div>
+                      <button
+                        onClick={() => {
+                          setAdminMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+                      >
+                        <LogOut size={16} />
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
 
@@ -217,6 +259,13 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Services
+                  </Link>
+                  <Link
+                    to="/reviews"
+                    className={`px-4 py-2.5 rounded-lg ${navLinkClass("/reviews")}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Reviews
                   </Link>
                   <Link
                     to="/track"
@@ -286,6 +335,17 @@ export default function Header() {
                 </>
               ) : (
                 <>
+                  <div className="px-4 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg mb-2 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold text-lg">
+                      {(adminUser.name || "A").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold">
+                        {adminUser.name || "Admin"}
+                      </p>
+                      <p className="text-xs text-white/70">Administrator</p>
+                    </div>
+                  </div>
                   <Link
                     to="/admin/dashboard"
                     className={`px-4 py-2.5 rounded-lg flex items-center gap-2 ${navLinkClass("/admin/dashboard")}`}
@@ -307,7 +367,7 @@ export default function Header() {
                     className={`px-4 py-2.5 rounded-lg flex items-center gap-2 ${navLinkClass("/admin/services")}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Settings size={16} />
+                    <Wrench size={16} />
                     Services
                   </Link>
                   <div className="border-t border-slate-100 my-2"></div>
@@ -327,6 +387,13 @@ export default function Header() {
           </div>
         )}
       </nav>
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-slideDown { animation: slideDown 0.2s ease-out; }
+      `}</style>
     </header>
   );
 }

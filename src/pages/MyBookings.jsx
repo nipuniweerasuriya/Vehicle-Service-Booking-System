@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Timer,
+  Activity,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -265,6 +266,36 @@ export default function MyBookings() {
                           <span className="font-medium">{booking.time}</span>
                         </span>
                       </div>
+
+                      {/* Progress Tracker for Approved Bookings */}
+                      {booking.status === "Approved" &&
+                        booking.progress !== undefined && (
+                          <div className="mt-4 pt-4 border-t border-slate-100">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                <Activity size={14} className="text-sky-600" />
+                                Service Progress
+                              </span>
+                              <span className="text-sm font-bold text-sky-600">
+                                {booking.progress || 0}%
+                              </span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-sky-500 to-cyan-500 rounded-full transition-all duration-500"
+                                style={{ width: `${booking.progress || 0}%` }}
+                              />
+                            </div>
+                            {booking.progressStage && (
+                              <p className="text-xs text-slate-500 mt-2">
+                                Current Stage:{" "}
+                                <span className="font-medium text-slate-700">
+                                  {booking.progressStage}
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                        )}
                     </div>
 
                     {/* Right - Action */}

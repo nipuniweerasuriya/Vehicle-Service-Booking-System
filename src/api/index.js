@@ -11,7 +11,11 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  // Check for admin token first, then regular user token
+  const adminToken = localStorage.getItem('adminToken');
+  const userToken = localStorage.getItem('token');
+  const token = adminToken || userToken;
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -30,6 +34,10 @@ export const authAPI = {
 export const adminAPI = {
   getDashboard: () => api.get('/admin/dashboard'),
   getUsers: () => api.get('/admin/users'),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  getReviews: () => api.get('/admin/reviews'),
+  updateReviewStatus: (id, status) => api.put(`/admin/reviews/${id}/status`, { status }),
+  deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
 };
 
 // Bookings API
@@ -39,16 +47,28 @@ export const bookingsAPI = {
   getById: (id) => api.get(`/bookings/${id}`),
   getMyBookings: () => api.get('/bookings/my'),
   updateStatus: (id, status) => api.put(`/bookings/${id}/status`, { status }),
+  updateProgress: (id, progress, progressStage) => api.put(`/bookings/${id}/progress`, { progress, progressStage }),
   delete: (id) => api.delete(`/bookings/${id}`),
   getStats: () => api.get('/bookings/stats'),
 };
 
 // Services API
 export const servicesAPI = {
-  getAll: () => api.get('/services'),
+  getAll: (params) => api.get('/services', { params }),
+  getStats: () => api.get('/services/stats'),
   create: (service) => api.post('/services', service),
   update: (id, service) => api.put(`/services/${id}`, service),
   delete: (id) => api.delete(`/services/${id}`),
+  toggleStatus: (id) => api.patch(`/services/${id}/toggle-status`),
+  toggleFeatured: (id) => api.patch(`/services/${id}/toggle-featured`),
+  bulkUpdateStatus: (serviceIds, status) => api.post('/services/bulk-status', { serviceIds, status }),
+  bulkDelete: (serviceIds) => api.post('/services/bulk-delete', { serviceIds }),
+};
+
+// Reviews API
+export const reviewsAPI = {
+  getAll: () => api.get('/reviews'),
+  create: (review) => api.post('/reviews', review),
 };
 
 export default api;
