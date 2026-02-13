@@ -50,6 +50,17 @@ export default function ServiceList() {
 
   // Pre-fill user data when modal opens
   const openBookingModal = (service) => {
+    // Require login before booking
+    if (!isUserLoggedIn) {
+      navigate("/signin", {
+        state: {
+          from: "/services",
+          message: "Please sign in to book a service",
+        },
+      });
+      return;
+    }
+
     setSelectedService(service);
     setFormData({
       name: user?.name || "",
@@ -754,10 +765,10 @@ export default function ServiceList() {
                   </p>
                   <div className="flex gap-3 justify-center">
                     <button
-                      onClick={() => navigate("/track")}
+                      onClick={() => navigate("/my-bookings")}
                       className="btn-outline"
                     >
-                      Track Booking
+                      View My Bookings
                     </button>
                     <button onClick={closeModal} className="btn-primary">
                       Done

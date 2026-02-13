@@ -17,7 +17,6 @@ import { bookingsAPI, servicesAPI, authAPI } from "./api";
 import Home from "./pages/Home";
 import ServiceList from "./pages/ServiceList";
 import BookingConfirmation from "./pages/BookingConfirmation";
-import TrackBooking from "./pages/TrackBooking";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import MyBookings from "./pages/MyBookings";
@@ -305,7 +304,6 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<ServiceList />} />
             <Route path="/confirmation" element={<BookingConfirmation />} />
-            <Route path="/track" element={<TrackBooking />} />
 
             {/* User Auth Routes */}
             <Route path="/signin" element={<SignIn />} />

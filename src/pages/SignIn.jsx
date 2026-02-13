@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Mail,
   Lock,
@@ -23,7 +23,12 @@ import { authAPI } from "../api";
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, setIsAdminLoggedIn } = useContext(AuthContext);
+
+  // Get redirect info from state (e.g., when redirected from booking)
+  const redirectMessage = location.state?.message;
+  const redirectFrom = location.state?.from;
 
   const [formData, setFormData] = useState({
     email: "",
@@ -82,7 +87,8 @@ export default function SignIn() {
       } else {
         // Regular user login
         login(userData);
-        navigate("/my-bookings");
+        // Redirect to original page or my-bookings
+        navigate(redirectFrom || "/my-bookings");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password");
@@ -205,6 +211,18 @@ export default function SignIn() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Redirect Message (e.g., from booking attempt) */}
+                  {redirectMessage && (
+                    <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200 rounded-xl p-4 flex items-center gap-3 animate-scale-in">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <LogIn size={20} className="text-blue-600" />
+                      </div>
+                      <span className="text-blue-700 font-medium">
+                        {redirectMessage}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Error Message */}
                   {error && (
                     <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-xl p-4 flex items-center gap-3 animate-scale-in">

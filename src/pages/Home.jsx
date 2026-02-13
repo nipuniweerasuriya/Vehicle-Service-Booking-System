@@ -29,6 +29,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { BookingContext } from "../context/BookingContext";
+import { reviewsAPI } from "../api";
 
 // Custom hook for animated counter
 function useCountUp(end, duration = 2000, startOnView = true) {
@@ -83,6 +84,23 @@ function useCountUp(end, duration = 2000, startOnView = true) {
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { services } = useContext(BookingContext);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  // Fetch approved reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await reviewsAPI.getAll();
+        setReviews(response.data.slice(0, 6)); // Show max 6 reviews
+      } catch (err) {
+        console.log("Failed to fetch reviews");
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+    fetchReviews();
+  }, []);
 
   const slides = [
     {
@@ -156,29 +174,33 @@ export default function Home() {
     },
   ];
 
-  const testimonials = [
+  // Default testimonials if no reviews available
+  const defaultTestimonials = [
     {
-      name: "John Smith",
-      role: "Toyota Owner",
-      content:
+      userName: "John Smith",
+      serviceType: "Toyota Owner",
+      comment:
         "Excellent service! My car runs like new after the maintenance. Highly recommend!",
       rating: 5,
     },
     {
-      name: "Sarah Johnson",
-      role: "Honda Owner",
-      content:
+      userName: "Sarah Johnson",
+      serviceType: "Honda Owner",
+      comment:
         "Fast, professional, and affordable. The online booking system is super convenient.",
       rating: 5,
     },
     {
-      name: "Mike Davis",
-      role: "BMW Owner",
-      content:
+      userName: "Mike Davis",
+      serviceType: "BMW Owner",
+      comment:
         "Best auto service I've ever experienced. The team really knows their stuff!",
       rating: 5,
     },
   ];
+
+  // Use fetched reviews if available, otherwise use defaults
+  const displayReviews = reviews.length > 0 ? reviews : defaultTestimonials;
 
   const howItWorks = [
     {
@@ -309,10 +331,10 @@ export default function Home() {
                     <ArrowRight size={18} />
                   </Link>
                   <Link
-                    to="/track"
+                    to="/signin"
                     className="btn-ghost text-white border border-slate-600 hover:bg-slate-800 flex items-center gap-2 px-6 py-3"
                   >
-                    <span>Track Booking</span>
+                    <span>Sign In</span>
                   </Link>
                 </div>
 
@@ -382,7 +404,7 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="py-24 px-4">
+        <section id="about" className="py-24 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <span className="bg-gradient-to-r from-sky-100 to-cyan-100 px-5 py-2 rounded-full text-sm font-bold text-sky-700 inline-block mb-4">
@@ -419,7 +441,10 @@ export default function Home() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-24 px-4 bg-gradient-to-b from-slate-50 to-white">
+        <section
+          id="how-it-works"
+          className="py-24 px-4 bg-gradient-to-b from-slate-50 to-white"
+        >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <span className="bg-gradient-to-r from-violet-100 to-purple-100 px-5 py-2 rounded-full text-sm font-bold text-violet-700 inline-block mb-4">
@@ -544,61 +569,69 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Customer Reviews Section */}
         <section className="py-24 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <span className="bg-gradient-to-r from-amber-100 to-orange-100 px-5 py-2 rounded-full text-sm font-bold text-amber-700 inline-block mb-4">
-                Testimonials
+                Customer Reviews
               </span>
               <h2 className="text-4xl font-bold mb-4">
                 <span className="gradient-text">What Our Customers Say</span>
               </h2>
               <p className="text-slate-600 max-w-2xl mx-auto text-lg">
-                Don't just take our word for it - hear from our satisfied
-                customers
+                Real feedback from our valued customers
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, idx) => (
-                <div
-                  key={idx}
-                  className="glass-card p-6 hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={18}
-                        className="fill-amber-400 text-amber-400"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-slate-700 mb-6 italic">
-                    "{testimonial.content}"
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
-                      {testimonial.name.charAt(0)}
+            {reviewsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="w-10 h-10 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-6">
+                {displayReviews.map((review, idx) => (
+                  <div
+                    key={review._id || idx}
+                    className="glass-card p-6 hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(review.rating || 5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          size={18}
+                          className="fill-amber-400 text-amber-400"
+                        />
+                      ))}
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-900">
-                        {testimonial.name}
-                      </p>
-                      <p className="text-sm text-slate-500">
-                        {testimonial.role}
-                      </p>
+                    <p className="text-slate-700 mb-6 italic line-clamp-4">
+                      "{review.comment}"
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {(review.userName || "U").charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">
+                          {review.userName || "Customer"}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {review.serviceType || "Vehicle Service"}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
         {/* FAQ Section */}
-        <section className="py-24 px-4 bg-gradient-to-b from-white to-slate-50">
+        <section
+          id="contact"
+          className="py-24 px-4 bg-gradient-to-b from-white to-slate-50"
+        >
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-16">
               <span className="bg-gradient-to-r from-emerald-100 to-teal-100 px-5 py-2 rounded-full text-sm font-bold text-emerald-700 inline-block mb-4">
@@ -687,10 +720,10 @@ export default function Home() {
                     Book Now
                   </Link>
                   <Link
-                    to="/track"
+                    to="/signin"
                     className="px-10 py-4 text-lg text-white border-2 border-slate-600 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-2"
                   >
-                    Track Existing Booking
+                    Sign In / Sign Up
                   </Link>
                 </div>
               </div>

@@ -72,6 +72,8 @@ export default function TrackBooking() {
         date: booking.date,
         time: booking.time,
         status: booking.status,
+        progress: booking.progress || 0,
+        progressStage: booking.progressStage || "Waiting",
         createdAt: booking.createdAt?.split("T")[0] || booking.createdAt,
       }));
       setAllBookings(bookings);
@@ -717,51 +719,105 @@ export default function TrackBooking() {
                 <div className="p-6 space-y-6">
                   {/* Progress Timeline */}
                   <div className="bg-slate-50 rounded-xl p-5">
-                    <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                      <Sparkles size={18} className="text-sky-500" />
-                      Progress Timeline
-                    </h4>
-                    <div className="flex items-center justify-between">
-                      {[
-                        { step: "Received", status: "Pending" },
-                        { step: "Approved", status: "Approved" },
-                        { step: "Completed", status: "Completed" },
-                      ].map((item, idx) => {
-                        const isActive =
-                          item.status === "Pending" ||
-                          (item.status === "Approved" &&
-                            ["Approved", "Completed"].includes(
-                              selectedBooking.status,
-                            )) ||
-                          (item.status === "Completed" &&
-                            selectedBooking.status === "Completed");
-                        return (
-                          <div key={idx} className="flex items-center flex-1">
-                            <div className="flex flex-col items-center flex-1">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                        <Sparkles size={18} className="text-sky-500" />
+                        Service Progress
+                      </h4>
+                      {selectedBooking.status === "Approved" && (
+                        <span className="text-sm font-bold text-blue-600">
+                          {selectedBooking.progress}%
+                        </span>
+                      )}
+                    </div>
+
+                    {selectedBooking.status === "Approved" ? (
+                      <>
+                        {/* Progress Bar */}
+                        <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden mb-4">
+                          <div
+                            className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                            style={{ width: `${selectedBooking.progress}%` }}
+                          />
+                        </div>
+
+                        {/* Progress Stages */}
+                        <div className="flex items-center justify-between text-xs">
+                          {[
+                            { label: "Received", value: 20 },
+                            { label: "Inspection", value: 40 },
+                            { label: "In Progress", value: 60 },
+                            { label: "Quality Check", value: 80 },
+                            { label: "Completed", value: 100 },
+                          ].map((stage, idx) => (
+                            <div
+                              key={idx}
+                              className="flex flex-col items-center"
+                            >
                               <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-400"}`}
-                              >
-                                {isActive ? (
-                                  <CheckCircle size={20} />
-                                ) : (
-                                  <Clock size={20} />
-                                )}
-                              </div>
+                                className={`w-3 h-3 rounded-full mb-1 ${selectedBooking.progress >= stage.value ? "bg-blue-600" : "bg-slate-200"}`}
+                              />
                               <span
-                                className={`text-sm mt-2 font-medium ${isActive ? "text-emerald-700" : "text-slate-400"}`}
+                                className={`${selectedBooking.progress >= stage.value ? "text-slate-700 font-medium" : "text-slate-400"}`}
                               >
-                                {item.step}
+                                {stage.label}
                               </span>
                             </div>
-                            {idx < 2 && (
-                              <div
-                                className={`h-1 flex-1 ${isActive && idx === 0 ? "bg-emerald-500" : isActive && selectedBooking.status === "Completed" ? "bg-emerald-500" : "bg-slate-200"}`}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                          <p className="text-sm text-slate-600">
+                            Current Stage:{" "}
+                            <span className="font-semibold text-blue-600">
+                              {selectedBooking.progressStage}
+                            </span>
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        {[
+                          { step: "Received", status: "Pending" },
+                          { step: "Approved", status: "Approved" },
+                          { step: "Completed", status: "Completed" },
+                        ].map((item, idx) => {
+                          const isActive =
+                            item.status === "Pending" ||
+                            (item.status === "Approved" &&
+                              ["Approved", "Completed"].includes(
+                                selectedBooking.status,
+                              )) ||
+                            (item.status === "Completed" &&
+                              selectedBooking.status === "Completed");
+                          return (
+                            <div key={idx} className="flex items-center flex-1">
+                              <div className="flex flex-col items-center flex-1">
+                                <div
+                                  className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-400"}`}
+                                >
+                                  {isActive ? (
+                                    <CheckCircle size={20} />
+                                  ) : (
+                                    <Clock size={20} />
+                                  )}
+                                </div>
+                                <span
+                                  className={`text-sm mt-2 font-medium ${isActive ? "text-emerald-700" : "text-slate-400"}`}
+                                >
+                                  {item.step}
+                                </span>
+                              </div>
+                              {idx < 2 && (
+                                <div
+                                  className={`h-1 flex-1 ${isActive && idx === 0 ? "bg-emerald-500" : isActive && selectedBooking.status === "Completed" ? "bg-emerald-500" : "bg-slate-200"}`}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Details Grid */}

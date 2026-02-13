@@ -23,9 +23,15 @@
 }
 
 @layer base {
+  /* Disable all focus rings by default */
+  *:focus {
+    outline: none !important;
+  }
+  
   body {
     @apply bg-gradient-to-br from-slate-50 via-sky-50/30 to-slate-50 text-slate-800 antialiased min-h-screen;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: "Inter", system-ui, sans-serif;
@@ -282,6 +288,44 @@
 
 ::-webkit-scrollbar-thumb {
   @apply bg-slate-300/80 rounded-full hover:bg-slate-400;
+}
+
+/* Remove focus outlines globally */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+}
+
+button,
+a,
+[role="button"],
+input,
+select,
+textarea {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus,
+button:focus-visible,
+button:active,
+a:focus,
+a:focus-visible,
+a:active,
+[role="button"]:focus,
+[role="button"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Focus visible styles */

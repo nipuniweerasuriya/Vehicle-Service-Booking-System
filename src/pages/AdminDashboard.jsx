@@ -20,6 +20,7 @@ import {
   AlertCircle,
   ChevronRight,
   TrendingUp,
+  TrendingDown,
   Sparkles,
   Zap,
   Calendar,
@@ -52,6 +53,7 @@ import {
   Archive,
   Grid3X3,
   List,
+  Maximize2,
 } from "lucide-react";
 import { bookingsAPI, adminAPI, servicesAPI } from "../api";
 
@@ -155,6 +157,11 @@ export default function AdminDashboard() {
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceStats, setServiceStats] = useState(null);
   const [showServiceStats, setShowServiceStats] = useState(false);
+  const [serviceSortBy, setServiceSortBy] = useState("name"); // name, price, duration, discount
+  const [serviceSortOrder, setServiceSortOrder] = useState("asc");
+  const [serviceQuickView, setServiceQuickView] = useState(null);
+  const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 500 });
 
   // Bookings management state
   const [bookingSearch, setBookingSearch] = useState("");
@@ -309,7 +316,7 @@ export default function AdminDashboard() {
       // Load services first
       const servicesRes = await servicesAPI.getAll();
       setServices(servicesRes.data || []);
-      
+
       // Try to load stats separately (don't fail if stats fail)
       try {
         const statsRes = await servicesAPI.getStats();
@@ -502,6 +509,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteService = async (serviceId) => {
+    if (!confirm("Are you sure you want to delete this service?")) return;
     try {
       await servicesAPI.delete(serviceId);
       setServices(services.filter((s) => s._id !== serviceId));
@@ -510,10 +518,31 @@ export default function AdminDashboard() {
     }
   };
 
+  // Duplicate a service
+  const handleDuplicateService = async (service) => {
+    try {
+      const duplicateData = {
+        name: `${service.name} (Copy)`,
+        description: service.description,
+        price: service.price,
+        icon: service.icon,
+        category: service.category,
+        duration: service.duration,
+        status: "inactive", // Start as inactive
+        featured: false,
+        discount: 0,
+      };
+      const res = await servicesAPI.create(duplicateData);
+      setServices([...services, res.data]);
+    } catch (err) {
+      alert("Failed to duplicate service");
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminUser");
-    navigate("/");
+    window.location.href = "/";
   };
 
   const getGreeting = () => {
@@ -565,19 +594,60 @@ export default function AdminDashboard() {
     (review) => reviewFilter === "all" || review.status === reviewFilter,
   );
 
-  // Filter services
-  const filteredServices = services.filter((service) => {
-    const matchesSearch =
-      !serviceSearch ||
-      service.name?.toLowerCase().includes(serviceSearch.toLowerCase()) ||
-      service.description?.toLowerCase().includes(serviceSearch.toLowerCase());
-    const matchesStatus =
-      serviceFilter === "all" || service.status === serviceFilter;
-    const matchesCategory =
-      serviceCategoryFilter === "all" ||
-      service.category === serviceCategoryFilter;
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+  // Filter and sort services
+  const filteredServices = services
+    .filter((service) => {
+      const matchesSearch =
+        !serviceSearch ||
+        service.name?.toLowerCase().includes(serviceSearch.toLowerCase()) ||
+        service.description
+          ?.toLowerCase()
+          .includes(serviceSearch.toLowerCase());
+      const matchesStatus =
+        serviceFilter === "all" || service.status === serviceFilter;
+      const matchesCategory =
+        serviceCategoryFilter === "all" ||
+        service.category === serviceCategoryFilter;
+      const price =
+        typeof service.price === "number"
+          ? service.price
+          : parseFloat(service.price) || 0;
+      const matchesPrice =
+        !showPriceFilter ||
+        (price >= priceRange.min && price <= priceRange.max);
+      return matchesSearch && matchesStatus && matchesCategory && matchesPrice;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      switch (serviceSortBy) {
+        case "name":
+          comparison = (a.name || "").localeCompare(b.name || "");
+          break;
+        case "price":
+          comparison = (a.price || 0) - (b.price || 0);
+          break;
+        case "duration":
+          comparison = (a.duration || 0) - (b.duration || 0);
+          break;
+        case "discount":
+          comparison = (a.discount || 0) - (b.discount || 0);
+          break;
+        case "category":
+          comparison = (a.category || "").localeCompare(b.category || "");
+          break;
+        default:
+          comparison = 0;
+      }
+      return serviceSortOrder === "asc" ? comparison : -comparison;
+    });
+
+  // Get price tiers for visual indication
+  const getPriceTier = (price) => {
+    if (price < 50) return { tier: "budget", color: "emerald", label: "$" };
+    if (price < 100) return { tier: "standard", color: "blue", label: "$$" };
+    if (price < 200) return { tier: "premium", color: "amber", label: "$$$" };
+    return { tier: "luxury", color: "violet", label: "$$$$" };
+  };
 
   // Navigation items
   const navItems = [
@@ -678,19 +748,19 @@ export default function AdminDashboard() {
       <div className="flex">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-slate-900 transform transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 flex flex-col`}
+          className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 transform transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 flex flex-col overflow-y-auto`}
         >
           {/* Header */}
-          <div className="p-5 border-b border-slate-800">
+          <div className="p-4 border-b border-slate-800">
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center group">
-                <span className="text-2xl font-black tracking-tight">
+                <span className="text-xl font-black tracking-tight">
                   <span className="bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
                     Vehicle
                   </span>
                   <span className="text-white">Care</span>
                 </span>
-                <span className="ml-1 w-2 h-2 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 group-hover:scale-125 transition-transform" />
+                <span className="ml-1 w-1.5 h-1.5 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 group-hover:scale-125 transition-transform" />
               </Link>
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -701,65 +771,60 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Admin Profile Card */}
-          <div className="p-4">
-            <div className="bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="relative">
-                  <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                    {(adminUser.name || "A").charAt(0)}
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-800"></div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white truncate text-sm">
-                    {adminUser.name || "Admin"}
-                  </p>
-                  <p className="text-xs text-slate-400 truncate">
-                    {adminUser.email}
-                  </p>
-                </div>
+          {/* Admin Info & Quick Stats */}
+          <div className="px-4 py-3">
+            {/* Admin Name with Status */}
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="font-semibold text-white text-sm">
+                  {adminUser.name || "Admin"}
+                </p>
+                <p className="text-[10px] text-slate-400">{adminUser.email}</p>
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1 px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-md">
-                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
-                  Online
-                </span>
-                <span className="flex items-center gap-1 px-2 py-1 bg-slate-700 text-slate-300 rounded-md">
-                  <Shield size={10} />
-                  Admin
-                </span>
-              </div>
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-[10px]">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                Online
+              </span>
             </div>
-          </div>
 
-          {/* Quick Stats */}
-          <div className="px-4 pb-4">
+            {/* Smart Stats Grid */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-                <div className="flex items-center gap-2 mb-1">
-                  <CalendarCheck size={13} className="text-blue-400" />
-                  <span className="text-xs text-slate-400">Total</span>
+              <div className="bg-slate-800/50 rounded-lg p-2.5 border border-slate-700/50">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <CalendarCheck size={12} className="text-blue-400" />
+                  <span className="text-[10px] text-slate-400">Total</span>
                 </div>
-                <p className="text-lg font-bold text-white">
+                <p className="text-base font-bold text-white">
                   {animatedStats.total}
                 </p>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock size={13} className="text-amber-400" />
-                  <span className="text-xs text-slate-400">Pending</span>
+              <div className="bg-slate-800/50 rounded-lg p-2.5 border border-slate-700/50">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Clock size={12} className="text-amber-400" />
+                  <span className="text-[10px] text-slate-400">Pending</span>
                 </div>
-                <p className="text-lg font-bold text-white">
+                <p className="text-base font-bold text-white">
                   {animatedStats.pending}
                 </p>
+              </div>
+            </div>
+
+            {/* Today's Summary */}
+            <div className="mt-3 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-lg p-2.5 border border-blue-500/20">
+              <div className="flex items-center gap-2 text-[10px]">
+                <Sparkles size={12} className="text-blue-400" />
+                <span className="text-slate-300">
+                  {animatedStats.pending > 0
+                    ? `${animatedStats.pending} booking${animatedStats.pending > 1 ? "s" : ""} need attention`
+                    : "All caught up! No pending tasks"}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">
+          <nav className="px-4 space-y-0.5">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1.5">
               Menu
             </p>
             {navItems.map((item) => (
@@ -769,21 +834,21 @@ export default function AdminDashboard() {
                   setActiveSection(item.id);
                   setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all group focus:outline-none ${
                   activeSection === item.id
                     ? "bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30"
                     : "hover:bg-slate-800/70"
                 }`}
               >
                 <div
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                     activeSection === item.id
                       ? "bg-blue-600"
                       : "bg-slate-800 group-hover:bg-slate-700"
                   }`}
                 >
                   <item.icon
-                    size={17}
+                    size={15}
                     className={
                       activeSection === item.id
                         ? "text-white"
@@ -797,10 +862,12 @@ export default function AdminDashboard() {
                   >
                     {item.label}
                   </p>
-                  <p className="text-xs text-slate-500 truncate">{item.desc}</p>
+                  <p className="text-[10px] text-slate-500 truncate">
+                    {item.desc}
+                  </p>
                 </div>
                 {item.badge > 0 && (
-                  <span className="px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded-md">
+                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded">
                     {item.badge}
                   </span>
                 )}
@@ -809,20 +876,20 @@ export default function AdminDashboard() {
           </nav>
 
           {/* Performance */}
-          <div className="p-4">
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Target size={15} className="text-blue-400" />
-                  <span className="text-sm font-medium text-white">
+          <div className="px-4 py-3">
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Target size={13} className="text-blue-400" />
+                  <span className="text-xs font-medium text-white">
                     Performance
                   </span>
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-[10px] text-slate-400">
                   {completionRate}%
                 </span>
               </div>
-              <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-1000"
                   style={{ width: `${completionRate}%` }}
@@ -832,19 +899,19 @@ export default function AdminDashboard() {
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-slate-800">
+          <div className="px-4 py-3 border-t border-slate-800">
             <Link
               to="/"
-              className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-all text-sm"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-slate-400 hover:bg-slate-800 hover:text-white rounded-lg transition-all text-sm focus:outline-none"
             >
-              <Home size={17} />
+              <Home size={15} />
               Back to Website
             </Link>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all mt-1 text-sm"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-all mt-1 text-sm focus:outline-none"
             >
-              <LogOut size={17} />
+              <LogOut size={15} />
               Sign Out
             </button>
           </div>
@@ -859,7 +926,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 lg:ml-72">
           {/* Header */}
           <header className="hidden lg:block bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-20">
             <div className="flex items-center justify-between">
@@ -1234,6 +1301,9 @@ export default function AdminDashboard() {
                             <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase">
                               Status
                             </th>
+                            <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase hidden md:table-cell">
+                              Progress
+                            </th>
                             <th className="px-5 py-3 text-right text-xs font-bold text-slate-500 uppercase">
                               Actions
                             </th>
@@ -1283,6 +1353,41 @@ export default function AdminDashboard() {
                               </td>
                               <td className="px-5 py-4">
                                 <StatusBadge status={booking.status} />
+                              </td>
+                              <td className="px-5 py-4 hidden md:table-cell">
+                                {booking.status === "Approved" ? (
+                                  <button
+                                    onClick={() =>
+                                      setProgressModal(
+                                        booking.bookingId || booking._id,
+                                      )
+                                    }
+                                    className="group flex items-center gap-2 hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors"
+                                  >
+                                    <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-blue-600 rounded-full transition-all"
+                                        style={{
+                                          width: `${booking.progress || 0}%`,
+                                        }}
+                                      />
+                                    </div>
+                                    <span className="text-xs font-semibold text-slate-600 group-hover:text-blue-600">
+                                      {booking.progress || 0}%
+                                    </span>
+                                  </button>
+                                ) : booking.status === "Completed" ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 h-2 bg-emerald-500 rounded-full" />
+                                    <span className="text-xs font-semibold text-emerald-600">
+                                      100%
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-slate-400">
+                                    —
+                                  </span>
+                                )}
                               </td>
                               <td className="px-5 py-4">
                                 <div className="flex items-center justify-end gap-1">
@@ -1374,85 +1479,133 @@ export default function AdminDashboard() {
             {activeSection === "services" && (
               <div className="space-y-6 animate-fadeIn">
                 {/* Header with stats toggle */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">
-                      Service Management
-                    </h2>
-                    <p className="text-slate-500 text-sm">
-                      Manage your service catalog with advanced features
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      onClick={() => setShowServiceStats(!showServiceStats)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${showServiceStats ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-                    >
-                      <PieChart size={16} />
-                      Analytics
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowServiceForm(true);
-                        setEditingService(null);
-                        resetServiceForm();
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      <Plus size={16} /> Add Service
-                    </button>
+                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-2xl p-6 text-white relative overflow-hidden">
+                  <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
+                  <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                          <Wrench className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-2xl font-bold">
+                          Service Management
+                        </h2>
+                      </div>
+                      <p className="text-blue-100">
+                        {services.length} services available -{" "}
+                        {services.filter((s) => s.status === "active").length}{" "}
+                        active
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setShowServiceStats(!showServiceStats)}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all ${showServiceStats ? "bg-white text-violet-700 shadow-lg" : "bg-white/20 text-white hover:bg-white/30"}`}
+                      >
+                        <PieChart size={16} />
+                        Analytics
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowServiceForm(true);
+                          setEditingService(null);
+                          resetServiceForm();
+                        }}
+                        className="px-4 py-2 bg-white text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-50 transition-all flex items-center gap-2 shadow-lg"
+                      >
+                        <Plus size={16} /> Add Service
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Analytics Panel */}
                 {showServiceStats && serviceStats && (
-                  <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl p-6 border border-violet-100">
-                    <div className="flex items-center gap-2 mb-4">
-                      <PieChart className="w-5 h-5 text-violet-600" />
-                      <h3 className="font-bold text-slate-900">
-                        Service Analytics
-                      </h3>
+                  <div className="bg-gradient-to-br from-slate-50 via-violet-50 to-indigo-50 rounded-2xl p-6 border border-violet-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                          <PieChart className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900">
+                            Service Analytics
+                          </h3>
+                          <p className="text-xs text-slate-500">
+                            Real-time statistics
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-                      <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-500 mb-1">
-                          Total Services
-                        </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <Package size={16} className="text-slate-600" />
+                          </div>
+                        </div>
                         <p className="text-2xl font-bold text-slate-900">
                           {serviceStats.total}
                         </p>
+                        <p className="text-xs text-slate-500">Total Services</p>
                       </div>
-                      <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-500 mb-1">Active</p>
+                      <div className="bg-white rounded-xl p-4 shadow-sm border border-emerald-100 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <CheckCircle
+                              size={16}
+                              className="text-emerald-600"
+                            />
+                          </div>
+                        </div>
                         <p className="text-2xl font-bold text-emerald-600">
                           {serviceStats.active}
                         </p>
+                        <p className="text-xs text-slate-500">Active</p>
                       </div>
-                      <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-500 mb-1">Inactive</p>
+                      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <Power size={16} className="text-slate-400" />
+                          </div>
+                        </div>
                         <p className="text-2xl font-bold text-slate-400">
                           {serviceStats.inactive}
                         </p>
+                        <p className="text-xs text-slate-500">Inactive</p>
                       </div>
-                      <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-500 mb-1">Featured</p>
+                      <div className="bg-white rounded-xl p-4 shadow-sm border border-amber-100 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <Star size={16} className="text-amber-600" />
+                          </div>
+                        </div>
                         <p className="text-2xl font-bold text-amber-600">
                           {serviceStats.featured}
                         </p>
+                        <p className="text-xs text-slate-500">Featured</p>
                       </div>
-                      <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-500 mb-1">
-                          With Discount
-                        </p>
+                      <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                            <Percent size={16} className="text-red-600" />
+                          </div>
+                        </div>
                         <p className="text-2xl font-bold text-red-600">
                           {serviceStats.withDiscount}
                         </p>
+                        <p className="text-xs text-slate-500">With Discount</p>
                       </div>
-                      <div className="bg-white rounded-xl p-4 shadow-sm">
-                        <p className="text-xs text-slate-500 mb-1">Avg Price</p>
+                      <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-100 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <DollarSign size={16} className="text-blue-600" />
+                          </div>
+                        </div>
                         <p className="text-2xl font-bold text-blue-600">
                           ${Math.round(serviceStats.avgPrice)}
                         </p>
+                        <p className="text-xs text-slate-500">Avg Price</p>
                       </div>
                     </div>
                     {/* Category breakdown */}
@@ -1467,21 +1620,49 @@ export default function AdminDashboard() {
                               const catInfo = serviceCategories.find(
                                 (c) => c.value === cat,
                               );
+                              const percentage =
+                                serviceStats.total > 0
+                                  ? Math.round(
+                                      (data.count / serviceStats.total) * 100,
+                                    )
+                                  : 0;
                               return (
                                 <div
                                   key={cat}
-                                  className="bg-white rounded-lg px-4 py-3 shadow-sm flex items-center gap-3"
+                                  onClick={() => setServiceCategoryFilter(cat)}
+                                  className={`bg-white rounded-xl px-4 py-3 shadow-sm border-2 cursor-pointer transition-all hover:scale-105 ${serviceCategoryFilter === cat ? `border-${catInfo?.color || "slate"}-400 ring-2 ring-${catInfo?.color || "slate"}-100` : "border-transparent hover:border-slate-200"}`}
                                 >
-                                  <div
-                                    className={`w-2 h-2 rounded-full bg-${catInfo?.color || "slate"}-500`}
-                                  ></div>
-                                  <div>
-                                    <p className="text-sm font-medium text-slate-900 capitalize">
-                                      {cat}
-                                    </p>
-                                    <p className="text-xs text-slate-500">
-                                      {data.active}/{data.count} active
-                                    </p>
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div
+                                      className={`w-10 h-10 bg-${catInfo?.color || "slate"}-100 rounded-lg flex items-center justify-center`}
+                                    >
+                                      <Wrench
+                                        className={`w-5 h-5 text-${catInfo?.color || "slate"}-600`}
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-sm font-bold text-slate-900 capitalize">
+                                        {cat}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        {data.count} services
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full bg-${catInfo?.color || "slate"}-500 rounded-full transition-all duration-300`}
+                                        style={{
+                                          width: `${(data.active / Math.max(data.count, 1)) * 100}%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <span
+                                      className={`text-xs font-medium text-${catInfo?.color || "slate"}-600`}
+                                    >
+                                      {data.active}/{data.count}
+                                    </span>
                                   </div>
                                 </div>
                               );
@@ -1494,7 +1675,8 @@ export default function AdminDashboard() {
                 )}
 
                 {/* Filters & Actions Bar */}
-                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+                  {/* Main filters row */}
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Search */}
                     <div className="relative flex-1 max-w-xs">
@@ -1515,7 +1697,7 @@ export default function AdminDashboard() {
                     <select
                       value={serviceFilter}
                       onChange={(e) => setServiceFilter(e.target.value)}
-                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
                     >
                       <option value="all">All Status</option>
                       <option value="active">Active</option>
@@ -1526,7 +1708,7 @@ export default function AdminDashboard() {
                     <select
                       value={serviceCategoryFilter}
                       onChange={(e) => setServiceCategoryFilter(e.target.value)}
-                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                      className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
                     >
                       <option value="all">All Categories</option>
                       {serviceCategories.map((cat) => (
@@ -1535,6 +1717,49 @@ export default function AdminDashboard() {
                         </option>
                       ))}
                     </select>
+
+                    {/* Sort By */}
+                    <div className="flex items-center gap-1">
+                      <select
+                        value={serviceSortBy}
+                        onChange={(e) => setServiceSortBy(e.target.value)}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                      >
+                        <option value="name">Sort by Name</option>
+                        <option value="price">Sort by Price</option>
+                        <option value="duration">Sort by Duration</option>
+                        <option value="discount">Sort by Discount</option>
+                        <option value="category">Sort by Category</option>
+                      </select>
+                      <button
+                        onClick={() =>
+                          setServiceSortOrder(
+                            serviceSortOrder === "asc" ? "desc" : "asc",
+                          )
+                        }
+                        className={`p-2 border border-slate-200 rounded-lg transition-colors hover:bg-slate-50 ${serviceSortOrder === "desc" ? "text-blue-600" : "text-slate-400"}`}
+                        title={
+                          serviceSortOrder === "asc"
+                            ? "Ascending"
+                            : "Descending"
+                        }
+                      >
+                        {serviceSortOrder === "asc" ? (
+                          <TrendingUp size={16} />
+                        ) : (
+                          <TrendingDown size={16} />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Price Range Toggle */}
+                    <button
+                      onClick={() => setShowPriceFilter(!showPriceFilter)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors border ${showPriceFilter ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+                    >
+                      <DollarSign size={14} />
+                      Price Filter
+                    </button>
 
                     {/* View Mode Toggle */}
                     <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
@@ -1551,32 +1776,151 @@ export default function AdminDashboard() {
                         <List size={16} />
                       </button>
                     </div>
+                  </div>
 
-                    {/* Bulk Actions */}
-                    {selectedServices.length > 0 && (
-                      <div className="flex items-center gap-2 ml-auto">
-                        <span className="text-sm text-slate-500">
-                          {selectedServices.length} selected
-                        </span>
+                  {/* Bulk Actions - separate row */}
+                  {selectedServices.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 bg-blue-50 rounded-lg px-4 py-3 border border-blue-200">
+                      <span className="text-sm font-medium text-blue-700">
+                        {selectedServices.length} service
+                        {selectedServices.length > 1 ? "s" : ""} selected
+                      </span>
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleBulkServiceStatus("active")}
-                          className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-200"
+                          className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-colors"
                         >
                           Activate
                         </button>
                         <button
                           onClick={() => handleBulkServiceStatus("inactive")}
-                          className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200"
+                          className="px-3 py-1.5 bg-slate-500 text-white rounded-lg text-xs font-medium hover:bg-slate-600 transition-colors"
                         >
                           Deactivate
                         </button>
                         <button
                           onClick={handleBulkDeleteServices}
-                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200"
+                          className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium hover:bg-red-600 transition-colors"
                         >
                           Delete
                         </button>
+                        <button
+                          onClick={() => setSelectedServices([])}
+                          className="px-3 py-1.5 bg-white text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors border border-slate-200"
+                        >
+                          Clear
+                        </button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Price Range Filter */}
+                  {showPriceFilter && (
+                    <div className="bg-slate-50 rounded-lg p-4 animate-fadeIn">
+                      <div className="flex flex-wrap items-center gap-6">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-slate-600">Min:</span>
+                          <div className="relative">
+                            <DollarSign
+                              size={14}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
+                            />
+                            <input
+                              type="number"
+                              value={priceRange.min}
+                              onChange={(e) =>
+                                setPriceRange({
+                                  ...priceRange,
+                                  min: Number(e.target.value),
+                                })
+                              }
+                              className="w-24 pl-7 pr-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-slate-600">Max:</span>
+                          <div className="relative">
+                            <DollarSign
+                              size={14}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
+                            />
+                            <input
+                              type="number"
+                              value={priceRange.max}
+                              onChange={(e) =>
+                                setPriceRange({
+                                  ...priceRange,
+                                  max: Number(e.target.value),
+                                })
+                              }
+                              className="w-24 pl-7 pr-2 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {[
+                            { label: "Budget ($0-50)", min: 0, max: 50 },
+                            { label: "Standard ($50-100)", min: 50, max: 100 },
+                            { label: "Premium ($100-200)", min: 100, max: 200 },
+                            { label: "Luxury ($200+)", min: 200, max: 1000 },
+                          ].map((preset) => (
+                            <button
+                              key={preset.label}
+                              onClick={() =>
+                                setPriceRange({
+                                  min: preset.min,
+                                  max: preset.max,
+                                })
+                              }
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${priceRange.min === preset.min && priceRange.max === preset.max ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"}`}
+                            >
+                              {preset.label.split(" ")[0]}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => setPriceRange({ min: 0, max: 1000 })}
+                            className="px-3 py-1.5 bg-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-300"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Results info */}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">
+                      Showing{" "}
+                      <span className="font-medium text-slate-700">
+                        {filteredServices.length}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-medium text-slate-700">
+                        {services.length}
+                      </span>{" "}
+                      services
+                    </span>
+                    {(serviceSearch ||
+                      serviceFilter !== "all" ||
+                      serviceCategoryFilter !== "all" ||
+                      showPriceFilter) && (
+                      <button
+                        onClick={() => {
+                          setServiceSearch("");
+                          setServiceFilter("all");
+                          setServiceCategoryFilter("all");
+                          setShowPriceFilter(false);
+                          setPriceRange({ min: 0, max: 1000 });
+                        }}
+                        className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                      >
+                        <XCircle size={14} />
+                        Clear all filters
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1586,7 +1930,7 @@ export default function AdminDashboard() {
                   <LoadingSpinner />
                 ) : filteredServices.length > 0 ? (
                   serviceViewMode === "grid" ? (
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                       {filteredServices.map((service) => {
                         const IconComponent = iconMap[service.icon] || Wrench;
                         const categoryInfo = serviceCategories.find(
@@ -1606,47 +1950,39 @@ export default function AdminDashboard() {
                         return (
                           <div
                             key={service._id}
-                            className={`bg-white rounded-xl border-2 transition-all hover:shadow-lg relative ${isSelected ? "border-blue-500 bg-blue-50/30" : "border-slate-200"} ${service.status === "inactive" ? "opacity-60" : ""}`}
+                            className={`group bg-white rounded-xl border transition-all duration-200 hover:shadow-lg relative ${isSelected ? "border-blue-500 ring-2 ring-blue-100" : "border-slate-200 hover:border-slate-300"} ${service.status === "inactive" ? "opacity-50" : ""}`}
                           >
-                            {/* Selection checkbox */}
-                            <div className="absolute top-3 left-3 z-10">
+                            {/* Top section with checkbox and badges */}
+                            <div className="p-4 pb-0 flex items-start justify-between">
                               <input
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() =>
                                   toggleServiceSelection(service._id)
                                 }
-                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                className="w-4 h-4 mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                               />
+                              <div className="flex items-center gap-1.5">
+                                {service.featured && (
+                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-semibold flex items-center gap-1">
+                                    <Star
+                                      size={10}
+                                      className="fill-amber-500"
+                                    />
+                                    Featured
+                                  </span>
+                                )}
+                                {service.discount > 0 && (
+                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-semibold">
+                                    -{service.discount}%
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
-                            {/* Featured badge */}
-                            {service.featured && (
-                              <div className="absolute top-3 right-3 z-10">
-                                <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold flex items-center gap-1">
-                                  <Star size={10} className="fill-amber-500" />{" "}
-                                  Featured
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Discount badge */}
-                            {service.discount > 0 && (
-                              <div
-                                className="absolute top-3 right-3 z-10"
-                                style={{
-                                  right: service.featured ? "90px" : "12px",
-                                }}
-                              >
-                                <span className="px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold">
-                                  -{service.discount}%
-                                </span>
-                              </div>
-                            )}
-
-                            <div className="p-5 pt-10">
-                              {/* Icon & Status */}
-                              <div className="flex items-center justify-between mb-4">
+                            <div className="p-4">
+                              {/* Icon and Category */}
+                              <div className="flex items-center gap-3 mb-4">
                                 <div
                                   className={`w-12 h-12 bg-${categoryInfo?.color || "blue"}-100 rounded-xl flex items-center justify-center`}
                                 >
@@ -1654,74 +1990,99 @@ export default function AdminDashboard() {
                                     className={`w-6 h-6 text-${categoryInfo?.color || "blue"}-600`}
                                   />
                                 </div>
+                                <div>
+                                  <span
+                                    className={`text-xs font-medium text-${categoryInfo?.color || "slate"}-600 capitalize`}
+                                  >
+                                    {service.category}
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-xs text-slate-400">
+                                      {service.duration} min
+                                    </span>
+                                    {service.bookingCount > 0 && (
+                                      <>
+                                        <span className="text-slate-300">
+                                          •
+                                        </span>
+                                        <span className="text-xs text-slate-400">
+                                          {service.bookingCount} booked
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Name & Description */}
+                              <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
+                                {service.name}
+                              </h3>
+                              <p className="text-sm text-slate-500 mb-4 line-clamp-2 leading-relaxed">
+                                {service.description}
+                              </p>
+
+                              {/* Price and Status */}
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-xl font-bold text-slate-900">
+                                    ${finalPrice}
+                                  </span>
+                                  {service.discount > 0 && (
+                                    <span className="text-sm text-slate-400 line-through">
+                                      ${service.price}
+                                    </span>
+                                  )}
+                                </div>
                                 <button
                                   onClick={() =>
                                     handleToggleServiceStatus(service._id)
                                   }
-                                  className={`p-1 rounded-lg transition-colors ${service.status === "active" ? "text-emerald-600 hover:bg-emerald-100" : "text-slate-400 hover:bg-slate-100"}`}
-                                  title={
-                                    service.status === "active"
-                                      ? "Deactivate"
-                                      : "Activate"
-                                  }
+                                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${service.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
                                 >
-                                  {service.status === "active" ? (
-                                    <ToggleRight size={24} />
-                                  ) : (
-                                    <ToggleLeft size={24} />
-                                  )}
+                                  {service.status === "active"
+                                    ? "Active"
+                                    : "Inactive"}
                                 </button>
                               </div>
 
-                              {/* Category tag */}
-                              <span
-                                className={`inline-block px-2 py-0.5 bg-${categoryInfo?.color || "slate"}-100 text-${categoryInfo?.color || "slate"}-700 rounded text-xs font-medium mb-2 capitalize`}
-                              >
-                                {service.category}
-                              </span>
-
-                              {/* Name & Description */}
-                              <h3 className="font-bold text-slate-900 mb-1">
-                                {service.name}
-                              </h3>
-                              <p className="text-sm text-slate-500 mb-3 line-clamp-2">
-                                {service.description}
-                              </p>
-
-                              {/* Duration */}
-                              <div className="flex items-center gap-1 text-xs text-slate-400 mb-3">
-                                <Timer size={12} />
-                                <span>{service.duration} min</span>
-                              </div>
-
-                              {/* Price */}
-                              <div className="flex items-center gap-2 mb-4">
-                                <p className="text-xl font-bold text-emerald-600">
-                                  ${finalPrice}
-                                </p>
-                                {service.discount > 0 && (
-                                  <p className="text-sm text-slate-400 line-through">
-                                    ${service.price}
-                                  </p>
-                                )}
-                              </div>
-
                               {/* Actions */}
-                              <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                              <div className="flex items-center gap-1 pt-3 border-t border-slate-100">
                                 <button
                                   onClick={() =>
                                     handleToggleServiceFeatured(service._id)
                                   }
-                                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1 ${service.featured ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600 hover:bg-amber-50"}`}
+                                  className={`p-2 rounded-lg transition-colors ${service.featured ? "text-amber-600 bg-amber-50" : "text-slate-400 hover:text-amber-600 hover:bg-amber-50"}`}
+                                  title={
+                                    service.featured
+                                      ? "Remove Featured"
+                                      : "Make Featured"
+                                  }
                                 >
                                   <Star
-                                    size={14}
+                                    size={16}
                                     className={
                                       service.featured ? "fill-amber-500" : ""
                                     }
                                   />
-                                  {service.featured ? "Featured" : "Feature"}
                                 </button>
+                                <button
+                                  onClick={() => setServiceQuickView(service)}
+                                  className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                  title="Quick View"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDuplicateService(service)
+                                  }
+                                  className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                                  title="Duplicate"
+                                >
+                                  <Copy size={16} />
+                                </button>
+                                <div className="flex-1" />
                                 <button
                                   onClick={() => {
                                     setEditingService(service);
@@ -1739,7 +2100,8 @@ export default function AdminDashboard() {
                                     });
                                     setShowServiceForm(true);
                                   }}
-                                  className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600 transition-colors"
+                                  className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                  title="Edit"
                                 >
                                   <Edit size={16} />
                                 </button>
@@ -1747,7 +2109,8 @@ export default function AdminDashboard() {
                                   onClick={() =>
                                     handleDeleteService(service._id)
                                   }
-                                  className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 transition-colors"
+                                  className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                  title="Delete"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -1761,10 +2124,10 @@ export default function AdminDashboard() {
                     /* List View */
                     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-slate-50">
+                        <table className="w-full min-w-[900px]">
+                          <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                              <th className="px-4 py-3 text-left">
+                              <th className="w-12 px-4 py-3 text-left">
                                 <input
                                   type="checkbox"
                                   checked={
@@ -1776,25 +2139,25 @@ export default function AdminDashboard() {
                                   className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                                 />
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">
+                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase whitespace-nowrap min-w-[250px]">
                                 Service
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">
+                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase whitespace-nowrap">
                                 Category
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">
+                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase whitespace-nowrap">
                                 Duration
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">
+                              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase whitespace-nowrap">
                                 Price
                               </th>
-                              <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">
+                              <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase whitespace-nowrap">
                                 Status
                               </th>
-                              <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">
+                              <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase whitespace-nowrap">
                                 Featured
                               </th>
-                              <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase">
+                              <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase whitespace-nowrap">
                                 Actions
                               </th>
                             </tr>
@@ -1822,7 +2185,7 @@ export default function AdminDashboard() {
                                   key={service._id}
                                   className={`hover:bg-slate-50/50 transition-colors ${service.status === "inactive" ? "opacity-60" : ""}`}
                                 >
-                                  <td className="px-4 py-4">
+                                  <td className="w-12 px-4 py-4">
                                     <input
                                       type="checkbox"
                                       checked={isSelected}
@@ -1832,38 +2195,38 @@ export default function AdminDashboard() {
                                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                                     />
                                   </td>
-                                  <td className="px-4 py-4">
+                                  <td className="px-4 py-4 min-w-[250px]">
                                     <div className="flex items-center gap-3">
                                       <div
-                                        className={`w-10 h-10 bg-${categoryInfo?.color || "blue"}-100 rounded-lg flex items-center justify-center`}
+                                        className={`w-10 h-10 bg-${categoryInfo?.color || "blue"}-100 rounded-lg flex items-center justify-center flex-shrink-0`}
                                       >
                                         <IconComponent
                                           className={`w-5 h-5 text-${categoryInfo?.color || "blue"}-600`}
                                         />
                                       </div>
-                                      <div>
-                                        <p className="font-medium text-slate-900">
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-slate-900 truncate">
                                           {service.name}
                                         </p>
-                                        <p className="text-xs text-slate-500 line-clamp-1 max-w-xs">
+                                        <p className="text-xs text-slate-500 truncate max-w-[200px]">
                                           {service.description}
                                         </p>
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="px-4 py-4">
+                                  <td className="px-4 py-4 whitespace-nowrap">
                                     <span
                                       className={`px-2 py-1 bg-${categoryInfo?.color || "slate"}-100 text-${categoryInfo?.color || "slate"}-700 rounded text-xs font-medium capitalize`}
                                     >
                                       {service.category}
                                     </span>
                                   </td>
-                                  <td className="px-4 py-4">
+                                  <td className="px-4 py-4 whitespace-nowrap">
                                     <span className="text-sm text-slate-600">
                                       {service.duration} min
                                     </span>
                                   </td>
-                                  <td className="px-4 py-4">
+                                  <td className="px-4 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-2">
                                       <span className="font-bold text-emerald-600">
                                         ${finalPrice}
@@ -1880,7 +2243,7 @@ export default function AdminDashboard() {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-4 text-center">
+                                  <td className="px-4 py-4 text-center whitespace-nowrap">
                                     <button
                                       onClick={() =>
                                         handleToggleServiceStatus(service._id)
@@ -1912,8 +2275,26 @@ export default function AdminDashboard() {
                                       />
                                     </button>
                                   </td>
-                                  <td className="px-4 py-4">
+                                  <td className="px-4 py-4 whitespace-nowrap">
                                     <div className="flex items-center justify-end gap-1">
+                                      <button
+                                        onClick={() =>
+                                          setServiceQuickView(service)
+                                        }
+                                        className="p-2 hover:bg-blue-50 rounded-lg text-slate-400 hover:text-blue-600 transition-colors"
+                                        title="Quick View"
+                                      >
+                                        <Eye size={16} />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleDuplicateService(service)
+                                        }
+                                        className="p-2 hover:bg-violet-50 rounded-lg text-slate-400 hover:text-violet-600 transition-colors"
+                                        title="Duplicate"
+                                      >
+                                        <Copy size={16} />
+                                      </button>
                                       <button
                                         onClick={() => {
                                           setEditingService(service);
@@ -1932,6 +2313,7 @@ export default function AdminDashboard() {
                                           setShowServiceForm(true);
                                         }}
                                         className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-blue-600 transition-colors"
+                                        title="Edit"
                                       >
                                         <Edit size={16} />
                                       </button>
@@ -1940,6 +2322,7 @@ export default function AdminDashboard() {
                                           handleDeleteService(service._id)
                                         }
                                         className="p-2 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 transition-colors"
+                                        title="Delete"
                                       >
                                         <Trash2 size={16} />
                                       </button>
@@ -2392,6 +2775,49 @@ export default function AdminDashboard() {
               <span className="text-slate-500">Status</span>
               <StatusBadge status={selectedBooking.status} />
             </div>
+
+            {/* Progress Tracking */}
+            {selectedBooking.status === "Approved" && (
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Activity size={14} className="text-blue-600" />
+                    <span className="text-sm font-medium text-slate-700">
+                      Service Progress
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-blue-600">
+                    {selectedBooking.progress || 0}%
+                  </span>
+                </div>
+                <div className="w-full h-2.5 bg-blue-100 rounded-full overflow-hidden mb-3">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                    style={{ width: `${selectedBooking.progress || 0}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">
+                    Stage:{" "}
+                    <span className="font-semibold text-slate-700">
+                      {selectedBooking.progressStage || "Waiting"}
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSelectedBooking(null);
+                      setProgressModal(
+                        selectedBooking.bookingId || selectedBooking._id,
+                      );
+                    }}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    Update Progress <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4 border-t border-slate-100">
               {selectedBooking.status === "Pending" && (
                 <>
@@ -2420,17 +2846,30 @@ export default function AdminDashboard() {
                 </>
               )}
               {selectedBooking.status === "Approved" && (
-                <button
-                  onClick={() =>
-                    handleStatusUpdate(
-                      selectedBooking._id || selectedBooking.bookingId,
-                      "Completed",
-                    )
-                  }
-                  className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 size={18} /> Mark Complete
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      setSelectedBooking(null);
+                      setProgressModal(
+                        selectedBooking.bookingId || selectedBooking._id,
+                      );
+                    }}
+                    className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Activity size={18} /> Update Progress
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleStatusUpdate(
+                        selectedBooking._id || selectedBooking.bookingId,
+                        "Completed",
+                      )
+                    }
+                    className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 size={18} /> Mark Complete
+                  </button>
+                </>
               )}
               <button
                 onClick={() => setSelectedBooking(null)}
@@ -2490,6 +2929,184 @@ export default function AdminDashboard() {
                 </button>
               ))}
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Service Quick View Modal */}
+      {serviceQuickView && (
+        <Modal onClose={() => setServiceQuickView(null)}>
+          <div className="p-6 max-h-[80vh] overflow-y-auto">
+            {(() => {
+              const service = serviceQuickView;
+              const IconComponent = iconMap[service.icon] || Wrench;
+              const categoryInfo = serviceCategories.find(
+                (c) => c.value === service.category,
+              );
+              const finalPrice =
+                service.discount > 0
+                  ? (service.price * (1 - service.discount / 100)).toFixed(0)
+                  : service.price;
+              const priceTier = getPriceTier(service.price);
+
+              return (
+                <>
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-16 h-16 bg-gradient-to-br from-${categoryInfo?.color || "blue"}-100 to-${categoryInfo?.color || "blue"}-200 rounded-2xl flex items-center justify-center shadow-sm`}
+                      >
+                        <IconComponent
+                          className={`w-8 h-8 text-${categoryInfo?.color || "blue"}-600`}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900">
+                          {service.name}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span
+                            className={`px-2 py-0.5 bg-${categoryInfo?.color || "slate"}-100 text-${categoryInfo?.color || "slate"}-700 rounded text-xs font-medium capitalize`}
+                          >
+                            {service.category}
+                          </span>
+                          {service.featured && (
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-bold flex items-center gap-1">
+                              <Star size={10} className="fill-amber-500" />{" "}
+                              Featured
+                            </span>
+                          )}
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs font-medium ${service.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+                          >
+                            {service.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setServiceQuickView(null)}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <X size={20} className="text-slate-400" />
+                    </button>
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-slate-500 mb-2">
+                      Description
+                    </h4>
+                    <p className="text-slate-700 leading-relaxed">
+                      {service.description}
+                    </p>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <DollarSign size={16} className="text-emerald-600" />
+                        <span className="text-2xl font-bold text-emerald-700">
+                          {finalPrice}
+                        </span>
+                      </div>
+                      {service.discount > 0 ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-xs text-slate-400 line-through">
+                            ${service.price}
+                          </span>
+                          <span className="text-xs font-bold text-red-600">
+                            -{service.discount}%
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-emerald-600">Price</span>
+                      )}
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <Timer size={16} className="text-blue-600" />
+                        <span className="text-2xl font-bold text-blue-700">
+                          {service.duration}
+                        </span>
+                      </div>
+                      <span className="text-xs text-blue-600">Minutes</span>
+                    </div>
+                    <div
+                      className={`bg-gradient-to-br from-${priceTier.color}-50 to-${priceTier.color}-100 rounded-xl p-4 text-center`}
+                    >
+                      <div
+                        className={`text-2xl font-bold text-${priceTier.color}-700 mb-1`}
+                      >
+                        {priceTier.label}
+                      </div>
+                      <span
+                        className={`text-xs text-${priceTier.color}-600 capitalize`}
+                      >
+                        {priceTier.tier}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-200">
+                    <button
+                      onClick={() => {
+                        setServiceQuickView(null);
+                        setEditingService(service);
+                        setServiceForm({
+                          name: service.name,
+                          description: service.description,
+                          price: service.price,
+                          icon: service.icon,
+                          category: service.category || "maintenance",
+                          duration: service.duration || 60,
+                          status: service.status || "active",
+                          featured: service.featured || false,
+                          discount: service.discount || 0,
+                        });
+                        setShowServiceForm(true);
+                      }}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Edit size={16} /> Edit Service
+                    </button>
+                    <button
+                      onClick={() => {
+                        setServiceQuickView(null);
+                        handleDuplicateService(service);
+                      }}
+                      className="flex-1 px-4 py-2 bg-violet-100 text-violet-700 rounded-lg text-sm font-medium hover:bg-violet-200 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Copy size={16} /> Duplicate
+                    </button>
+                    <button
+                      onClick={() => handleToggleServiceStatus(service._id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${service.status === "active" ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"}`}
+                    >
+                      {service.status === "active" ? (
+                        <ToggleLeft size={16} />
+                      ) : (
+                        <ToggleRight size={16} />
+                      )}
+                      {service.status === "active" ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      onClick={() => handleToggleServiceFeatured(service._id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${service.featured ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600 hover:bg-amber-50"}`}
+                    >
+                      <Star
+                        size={16}
+                        className={service.featured ? "fill-amber-500" : ""}
+                      />
+                      {service.featured ? "Unfeatured" : "Feature"}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </Modal>
       )}

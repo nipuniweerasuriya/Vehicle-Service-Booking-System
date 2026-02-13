@@ -78,18 +78,24 @@ export default function Header() {
                 >
                   Services
                 </Link>
-                <Link
-                  to="/reviews"
-                  className={`px-4 py-2 rounded-xl ${navLinkClass("/reviews")}`}
+                <a
+                  href="/#how-it-works"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-sky-600 hover:bg-sky-50/50 transition-all duration-300"
                 >
-                  Reviews
-                </Link>
-                <Link
-                  to="/track"
-                  className={`px-4 py-2 rounded-xl ${navLinkClass("/track")}`}
+                  How It Works
+                </a>
+                <a
+                  href="/#about"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-sky-600 hover:bg-sky-50/50 transition-all duration-300"
                 >
-                  Track Booking
-                </Link>
+                  About
+                </a>
+                <a
+                  href="/#contact"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-sky-600 hover:bg-sky-50/50 transition-all duration-300"
+                >
+                  Contact
+                </a>
 
                 <div className="w-px h-6 bg-slate-200 mx-3"></div>
 
@@ -260,20 +266,27 @@ export default function Header() {
                   >
                     Services
                   </Link>
-                  <Link
-                    to="/reviews"
-                    className={`px-4 py-2.5 rounded-lg ${navLinkClass("/reviews")}`}
+                  <a
+                    href="/#how-it-works"
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:text-sky-600 hover:bg-sky-50/50 transition-all"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Reviews
-                  </Link>
-                  <Link
-                    to="/track"
-                    className={`px-4 py-2.5 rounded-lg ${navLinkClass("/track")}`}
+                    How It Works
+                  </a>
+                  <a
+                    href="/#about"
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:text-sky-600 hover:bg-sky-50/50 transition-all"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Track Booking
-                  </Link>
+                    About
+                  </a>
+                  <a
+                    href="/#contact"
+                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:text-sky-600 hover:bg-sky-50/50 transition-all"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Contact
+                  </a>
 
                   <div className="border-t border-slate-100 my-2"></div>
 
