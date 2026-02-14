@@ -26,27 +26,54 @@ A modern, professional, and fully responsive Vehicle Service Booking System with
 ## Project Structure
 
 ```
-src/
-├── main.jsx                    # React entry point
-├── App.jsx                     # Main app component with routing
-├── index.css                   # Tailwind + custom styles
-├── context/
-│   ├── AuthContext.jsx        # Authentication state
-│   └── BookingContext.jsx     # Booking management state
-├── components/
-│   ├── Header.jsx             # Navigation header
-│   ├── Footer.jsx             # Footer component
-│   └── StatCard.jsx           # Admin dashboard stat cards
-└── pages/
-    ├── Home.jsx               # Landing page
-    ├── ServiceList.jsx        # Services catalog
-    ├── BookingForm.jsx        # Service booking form
-    ├── BookingConfirmation.jsx # Confirmation page
-    ├── TrackBooking.jsx       # Booking status tracking
-    ├── AdminLogin.jsx         # Admin login page
-    ├── AdminDashboard.jsx     # Admin overview dashboard
-    ├── ManageBookings.jsx     # Admin booking management
-    └── ServiceManagement.jsx  # Admin service management
+frontend/
+├── src/
+│   ├── main.jsx                    # React entry point
+│   ├── App.jsx                     # Main app component with routing
+│   ├── index.css                   # Tailwind + custom styles
+│   ├── context/
+│   │   ├── AuthContext.jsx        # Authentication state
+│   │   └── BookingContext.jsx     # Booking management state
+│   ├── components/
+│   │   ├── Header.jsx             # Navigation header
+│   │   ├── Footer.jsx             # Footer component
+│   │   └── StatCard.jsx           # Admin dashboard stat cards
+│   └── pages/
+│       ├── Home.jsx               # Landing page
+│       ├── ServiceList.jsx        # Services catalog
+│       ├── BookingForm.jsx        # Service booking form
+│       ├── BookingConfirmation.jsx # Confirmation page
+│       ├── TrackBooking.jsx       # Booking status tracking
+│       ├── AdminLogin.jsx         # Admin login page
+│       ├── AdminDashboard.jsx     # Admin overview dashboard
+│       ├── ManageBookings.jsx     # Admin booking management
+│       └── ServiceManagement.jsx  # Admin service management
+├── index.html                     # Main HTML file
+├── package.json                   # Frontend dependencies
+├── vite.config.js                 # Vite configuration
+├── tailwind.config.js             # Tailwind CSS configuration
+└── postcss.config.js              # PostCSS configuration
+
+backend/
+├── server.js                      # Main server file (MongoDB)
+├── server-inmemory.js             # In-memory server for development
+├── package.json                   # Backend dependencies
+├── config/
+│   └── db.js                      # Database configuration
+├── controllers/
+│   ├── authController.js          # Authentication logic
+│   ├── bookingController.js       # Booking management
+│   └── serviceController.js       # Service management
+├── middleware/
+│   └── auth.js                    # Authentication middleware
+├── models/
+│   ├── User.js                    # User model
+│   ├── Booking.js                 # Booking model
+│   └── Service.js                 # Service model
+└── routes/
+    ├── auth.js                    # Authentication routes
+    ├── bookings.js                # Booking routes
+    └── services.js                # Service routes
 ```
 
 ---
@@ -198,28 +225,45 @@ Admin routes are protected and redirect to login if not authenticated.
    cd Vehicle-Service-Booking-System
    ```
 
-2. **Install dependencies**
+2. **Install all dependencies**
 
    ```bash
-   npm install
+   npm run install:all
    ```
 
-3. **Start development server**
+   Or install manually:
+   ```bash
+   npm install                    # Root dependencies
+   cd frontend && npm install     # Frontend dependencies
+   cd ../backend && npm install   # Backend dependencies
+   cd ..
+   ```
+
+3. **Start development servers**
    ```bash
    npm run dev
    ```
-   The app will open at `http://localhost:3000`
+   This will start both frontend (http://localhost:3000) and backend (http://localhost:5001) servers.
+
+   Alternatively, run them separately:
+   ```bash
+   # Terminal 1: Frontend
+   cd frontend && npm run dev
+
+   # Terminal 2: Backend
+   cd backend && npm run dev
+   ```
 
 ### Build for Production
 
 ```bash
-npm run build
+cd frontend && npm run build
 ```
 
 ### Preview Production Build
 
 ```bash
-npm run preview
+cd frontend && npm run preview
 ```
 
 ---
