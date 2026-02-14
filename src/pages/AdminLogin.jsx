@@ -45,7 +45,6 @@ export default function AdminLogin() {
         password: formData.password,
       });
 
-      // Store admin token in localStorage
       localStorage.setItem("adminToken", response.data.token);
       localStorage.setItem("adminUser", JSON.stringify(response.data));
       setIsAdminLoggedIn(true);
@@ -59,13 +58,13 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background decorations */}
+      
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sky-500/20 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-3xl"></div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-3xl"></div>
 
       <div className="w-full max-w-md relative z-10">
-        {/* Back Link */}
+        
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 group"
@@ -77,7 +76,7 @@ export default function AdminLogin() {
           Back to Home
         </Link>
 
-        {/* Header */}
+        
         <div className="text-center mb-8 animate-fade-in">
           <div className="inline-flex items-center justify-center mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/30">
@@ -88,7 +87,7 @@ export default function AdminLogin() {
           <p className="text-slate-400">Vehicle Service Booking System</p>
         </div>
 
-        {/* Login Form Card */}
+        
         <div className="glass-card p-8 bg-white/95 backdrop-blur-xl">
           <div className="flex items-center gap-2 mb-6">
             <Sparkles size={20} className="text-sky-500" />
@@ -98,7 +97,7 @@ export default function AdminLogin() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Error Message */}
+            
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
                 <AlertCircle
@@ -109,7 +108,7 @@ export default function AdminLogin() {
               </div>
             )}
 
-            {/* Email Field */}
+            
             <div>
               <label className="form-label">Email Address</label>
               <div className="relative">
@@ -129,7 +128,7 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Password Field */}
+            
             <div>
               <label className="form-label">Password</label>
               <div className="relative">
@@ -156,7 +155,7 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Remember Me */}
+            
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -171,7 +170,7 @@ export default function AdminLogin() {
               </label>
             </div>
 
-            {/* Login Button */}
+            
             <button
               type="submit"
               disabled={loading}
@@ -188,7 +187,7 @@ export default function AdminLogin() {
             </button>
           </form>
 
-          {/* Demo Credentials Info */}
+          
           <div className="mt-6 pt-6 border-t border-slate-200">
             <p className="text-sm text-slate-500 mb-3 font-medium">
               Demo Credentials:
@@ -210,7 +209,7 @@ export default function AdminLogin() {
           </div>
         </div>
 
-        {/* Footer Note */}
+        
         <div className="text-center mt-8">
           <p className="text-slate-500 text-sm">
             This admin portal is restricted to authorized personnel only.

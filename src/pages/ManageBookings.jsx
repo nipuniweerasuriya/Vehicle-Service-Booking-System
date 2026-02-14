@@ -11,6 +11,8 @@ import {
   SortDesc,
   Activity,
   RefreshCw,
+  CreditCard,
+  Banknote,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -44,7 +46,6 @@ export default function ManageBookings() {
       const stageInfo = progressStages.find((s) => s.value === stage);
       await bookingsAPI.updateProgress(bookingId, stageInfo.progress, stage);
 
-      // If completed, also update status
       if (stage === "Completed") {
         await bookingsAPI.updateStatus(bookingId, "Completed");
       }
@@ -59,11 +60,9 @@ export default function ManageBookings() {
     }
   };
 
-  // Smart filtering and sorting
   const filteredBookings = useMemo(() => {
     let result = [...bookings];
 
-    // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -76,12 +75,10 @@ export default function ManageBookings() {
       );
     }
 
-    // Filter by status
     if (filterStatus !== "all") {
       result = result.filter((b) => b.status === filterStatus);
     }
 
-    // Sort
     result.sort((a, b) => {
       let aVal, bVal;
       switch (sortField) {
@@ -150,7 +147,6 @@ export default function ManageBookings() {
 
       <main className="min-h-screen bg-slate-50 py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-slate-900 mb-1">
               Manage Bookings
@@ -160,10 +156,8 @@ export default function ManageBookings() {
             </p>
           </div>
 
-          {/* Search and Filters */}
           <div className="card mb-6">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-              {/* Search */}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -175,7 +169,6 @@ export default function ManageBookings() {
                 />
               </div>
 
-              {/* Filter Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`btn-secondary flex items-center gap-2 ${showFilters ? "bg-sky-50 border-sky-200 text-sky-700" : ""}`}
@@ -190,7 +183,6 @@ export default function ManageBookings() {
               </button>
             </div>
 
-            {/* Filter Options */}
             {showFilters && (
               <div className="mt-4 pt-4 border-t border-slate-100 animate-slide-down">
                 <p className="text-sm font-medium text-slate-700 mb-3">
@@ -220,7 +212,6 @@ export default function ManageBookings() {
             )}
           </div>
 
-          {/* Results Info */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-slate-600">
               Showing{" "}
@@ -235,7 +226,6 @@ export default function ManageBookings() {
             </p>
           </div>
 
-          {/* Bookings Table */}
           <div className="card overflow-hidden">
             {filteredBookings.length > 0 ? (
               <div className="overflow-x-auto -m-6">
@@ -276,6 +266,7 @@ export default function ManageBookings() {
                           Status <SortIcon field="status" />
                         </button>
                       </th>
+                      <th className="table-header">Payment</th>
                       <th className="table-header text-right">Actions</th>
                     </tr>
                   </thead>
@@ -330,8 +321,34 @@ export default function ManageBookings() {
                           </span>
                         </td>
                         <td className="table-cell">
+                          <div className="flex items-center gap-2">
+                            {booking.paymentMethod === "card" ? (
+                              <CreditCard
+                                size={14}
+                                className="text-slate-400"
+                              />
+                            ) : (
+                              <Banknote size={14} className="text-slate-400" />
+                            )}
+                            <span
+                              className={`text-xs font-medium px-2 py-1 rounded ${
+                                booking.paymentStatus === "paid"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : booking.status === "Completed"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
+                              {booking.paymentStatus === "paid"
+                                ? "Paid"
+                                : booking.status === "Completed"
+                                  ? "Awaiting Payment"
+                                  : "Pending"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="table-cell">
                           <div className="flex items-center justify-end gap-1">
-                            {/* Quick Actions */}
                             {booking.status === "Pending" && (
                               <>
                                 <button
@@ -374,7 +391,7 @@ export default function ManageBookings() {
                                 </button>
                               </>
                             )}
-                            {/* Dropdown for all options */}
+
                             <div className="relative">
                               <button
                                 onClick={() =>
@@ -471,7 +488,6 @@ export default function ManageBookings() {
         </div>
       </main>
 
-      {/* Progress Update Modal */}
       {progressModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">

@@ -9,9 +9,7 @@ const api = axios.create({
   },
 });
 
-// Add auth token to requests
 api.interceptors.request.use((config) => {
-  // Check for admin token first, then regular user token
   const adminToken = localStorage.getItem('adminToken');
   const userToken = localStorage.getItem('token');
   const token = adminToken || userToken;
@@ -22,7 +20,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auth API
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   adminLogin: (credentials) => api.post('/auth/admin/login', credentials),
@@ -30,7 +27,6 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
 };
 
-// Admin API
 export const adminAPI = {
   getDashboard: () => api.get('/admin/dashboard'),
   getUsers: () => api.get('/admin/users'),
@@ -40,7 +36,6 @@ export const adminAPI = {
   deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
 };
 
-// Bookings API
 export const bookingsAPI = {
   create: (booking) => api.post('/bookings', booking),
   getAll: (params) => api.get('/bookings', { params }),
@@ -48,11 +43,17 @@ export const bookingsAPI = {
   getMyBookings: () => api.get('/bookings/my'),
   updateStatus: (id, status) => api.put(`/bookings/${id}/status`, { status }),
   updateProgress: (id, progress, progressStage) => api.put(`/bookings/${id}/progress`, { progress, progressStage }),
+  updatePayment: (id, paymentStatus) => api.put(`/bookings/${id}/payment`, { paymentStatus }),
   delete: (id) => api.delete(`/bookings/${id}`),
   getStats: () => api.get('/bookings/stats'),
 };
 
-// Services API
+export const notificationsAPI = {
+  getAll: () => api.get('/notifications'),
+  getAdminNotifications: () => api.get('/notifications/admin'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+};
+
 export const servicesAPI = {
   getAll: (params) => api.get('/services', { params }),
   getStats: () => api.get('/services/stats'),
@@ -65,7 +66,6 @@ export const servicesAPI = {
   bulkDelete: (serviceIds) => api.post('/services/bulk-delete', { serviceIds }),
 };
 
-// Reviews API
 export const reviewsAPI = {
   getAll: () => api.get('/reviews'),
   create: (review) => api.post('/reviews', review),

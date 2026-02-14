@@ -29,6 +29,10 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  servicePrice: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     enum: ['Pending', 'Approved', 'Completed', 'Rejected'],

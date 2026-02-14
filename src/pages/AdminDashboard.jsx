@@ -57,7 +57,6 @@ import {
 } from "lucide-react";
 import { bookingsAPI, adminAPI, servicesAPI } from "../api";
 
-// Icon map for services
 const iconMap = {
   Wrench,
   Droplet,
@@ -82,7 +81,6 @@ const iconMap = {
   Tag,
 };
 
-// Service categories
 const serviceCategories = [
   { value: "maintenance", label: "Maintenance", color: "blue" },
   { value: "repair", label: "Repair", color: "amber" },
@@ -90,7 +88,6 @@ const serviceCategories = [
   { value: "comfort", label: "Comfort", color: "emerald" },
 ];
 
-// Progress stages for bookings
 const progressStages = [
   { value: "Waiting", label: "Waiting", progress: 0 },
   { value: "Received", label: "Vehicle Received", progress: 20 },
@@ -103,10 +100,8 @@ const progressStages = [
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  // Active section tab
   const [activeSection, setActiveSection] = useState("dashboard");
 
-  // Dashboard state
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -122,19 +117,16 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Users state
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Reviews state
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewFilter, setReviewFilter] = useState("all");
   const [reviewDeleteConfirm, setReviewDeleteConfirm] = useState(null);
 
-  // Services state
   const [services, setServices] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -151,25 +143,25 @@ export default function AdminDashboard() {
     discount: 0,
   });
   const [serviceSearch, setServiceSearch] = useState("");
-  const [serviceFilter, setServiceFilter] = useState("all"); // all, active, inactive
+  const [serviceFilter, setServiceFilter] = useState("all");
   const [serviceCategoryFilter, setServiceCategoryFilter] = useState("all");
-  const [serviceViewMode, setServiceViewMode] = useState("grid"); // grid, list
+  const [serviceViewMode, setServiceViewMode] = useState("grid");
   const [selectedServices, setSelectedServices] = useState([]);
+  const [servicePage, setServicePage] = useState(1);
+  const [servicePageSize, setServicePageSize] = useState(12);
   const [serviceStats, setServiceStats] = useState(null);
   const [showServiceStats, setShowServiceStats] = useState(false);
-  const [serviceSortBy, setServiceSortBy] = useState("name"); // name, price, duration, discount
+  const [serviceSortBy, setServiceSortBy] = useState("name");
   const [serviceSortOrder, setServiceSortOrder] = useState("asc");
   const [serviceQuickView, setServiceQuickView] = useState(null);
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 500 });
 
-  // Bookings management state
   const [bookingSearch, setBookingSearch] = useState("");
   const [bookingFilter, setBookingFilter] = useState("all");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [progressModal, setProgressModal] = useState(null);
 
-  // UI state
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [animatedStats, setAnimatedStats] = useState({
@@ -185,13 +177,11 @@ export default function AdminDashboard() {
       '{"name": "Admin", "email": "admin@vehiclecare.com"}',
   );
 
-  // Update time
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
-  // Animate numbers
   const animateValue = useCallback((end, key, duration = 1000) => {
     const start = 0;
     const startTime = performance.now();
@@ -206,12 +196,10 @@ export default function AdminDashboard() {
     requestAnimationFrame(animate);
   }, []);
 
-  // Load dashboard data
   useEffect(() => {
     loadDashboardData();
   }, []);
 
-  // Load section data when tab changes
   useEffect(() => {
     if (activeSection === "users" && users.length === 0) loadUsers();
     if (activeSection === "reviews" && reviews.length === 0) loadReviews();
@@ -313,11 +301,9 @@ export default function AdminDashboard() {
   const loadServices = async () => {
     setServicesLoading(true);
     try {
-      // Load services first
       const servicesRes = await servicesAPI.getAll();
       setServices(servicesRes.data || []);
 
-      // Try to load stats separately (don't fail if stats fail)
       try {
         const statsRes = await servicesAPI.getStats();
         setServiceStats(statsRes.data || null);
@@ -332,7 +318,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Toggle service status (active/inactive)
   const handleToggleServiceStatus = async (serviceId) => {
     try {
       const res = await servicesAPI.toggleStatus(serviceId);
@@ -342,7 +327,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Toggle service featured
   const handleToggleServiceFeatured = async (serviceId) => {
     try {
       const res = await servicesAPI.toggleFeatured(serviceId);
@@ -352,7 +336,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Bulk update services status
   const handleBulkServiceStatus = async (status) => {
     if (selectedServices.length === 0) return;
     try {
@@ -368,7 +351,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Bulk delete services
   const handleBulkDeleteServices = async () => {
     if (selectedServices.length === 0) return;
     if (!confirm(`Delete ${selectedServices.length} service(s)?`)) return;
@@ -381,7 +363,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Toggle service selection
   const toggleServiceSelection = (serviceId) => {
     setSelectedServices((prev) =>
       prev.includes(serviceId)
@@ -390,9 +371,11 @@ export default function AdminDashboard() {
     );
   };
 
-  // Select all visible services
   const selectAllServices = () => {
-    const visibleIds = filteredServices.map((s) => s._id);
+    const start = (servicePage - 1) * servicePageSize;
+    const visibleIds = filteredServices
+      .slice(start, start + servicePageSize)
+      .map((s) => s._id);
     if (selectedServices.length === visibleIds.length) {
       setSelectedServices([]);
     } else {
@@ -488,7 +471,7 @@ export default function AdminDashboard() {
       setShowServiceForm(false);
       setEditingService(null);
       resetServiceForm();
-      loadServices(); // Reload to get updated stats
+      loadServices();
     } catch (err) {
       alert("Failed to save service");
     }
@@ -518,7 +501,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Duplicate a service
   const handleDuplicateService = async (service) => {
     try {
       const duplicateData = {
@@ -528,7 +510,7 @@ export default function AdminDashboard() {
         icon: service.icon,
         category: service.category,
         duration: service.duration,
-        status: "inactive", // Start as inactive
+        status: "inactive",
         featured: false,
         discount: 0,
       };
@@ -563,7 +545,6 @@ export default function AdminDashboard() {
   const completionRate =
     stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  // Filter bookings
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       !bookingSearch ||
@@ -581,7 +562,6 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus;
   });
 
-  // Filter users
   const filteredUsers = users.filter(
     (user) =>
       user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -589,12 +569,10 @@ export default function AdminDashboard() {
       user.phone?.includes(userSearch),
   );
 
-  // Filter reviews
   const filteredReviews = reviews.filter(
     (review) => reviewFilter === "all" || review.status === reviewFilter,
   );
 
-  // Filter and sort services
   const filteredServices = services
     .filter((service) => {
       const matchesSearch =
@@ -641,7 +619,20 @@ export default function AdminDashboard() {
       return serviceSortOrder === "asc" ? comparison : -comparison;
     });
 
-  // Get price tiers for visual indication
+  // pagination for services
+  const totalServicePages = Math.max(
+    1,
+    Math.ceil(filteredServices.length / servicePageSize),
+  );
+  const paginatedServices = filteredServices.slice(
+    (servicePage - 1) * servicePageSize,
+    servicePage * servicePageSize,
+  );
+
+  useEffect(() => {
+    if (servicePage > totalServicePages) setServicePage(1);
+  }, [filteredServices.length, servicePageSize]);
+
   const getPriceTier = (price) => {
     if (price < 50) return { tier: "budget", color: "emerald", label: "$" };
     if (price < 100) return { tier: "standard", color: "blue", label: "$$" };
@@ -649,7 +640,6 @@ export default function AdminDashboard() {
     return { tier: "luxury", color: "violet", label: "$$$$" };
   };
 
-  // Navigation items
   const navItems = [
     {
       id: "dashboard",
@@ -674,7 +664,6 @@ export default function AdminDashboard() {
     { id: "reviews", label: "Reviews", icon: Star, desc: "Manage reviews" },
   ];
 
-  // Loading
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
@@ -695,7 +684,6 @@ export default function AdminDashboard() {
     );
   }
 
-  // Error
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -720,7 +708,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* Mobile Header */}
       <div className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
         <button
           onClick={() => setSidebarOpen(true)}
@@ -746,11 +733,9 @@ export default function AdminDashboard() {
       </div>
 
       <div className="flex">
-        {/* Sidebar */}
         <aside
           className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 transform transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 flex flex-col overflow-y-auto`}
         >
-          {/* Header */}
           <div className="p-4 border-b border-slate-800">
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center group">
@@ -771,9 +756,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Admin Info & Quick Stats */}
           <div className="px-4 py-3">
-            {/* Admin Name with Status */}
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="font-semibold text-white text-sm">
@@ -787,7 +770,6 @@ export default function AdminDashboard() {
               </span>
             </div>
 
-            {/* Smart Stats Grid */}
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-slate-800/50 rounded-lg p-2.5 border border-slate-700/50">
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -809,7 +791,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Today's Summary */}
             <div className="mt-3 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-lg p-2.5 border border-blue-500/20">
               <div className="flex items-center gap-2 text-[10px]">
                 <Sparkles size={12} className="text-blue-400" />
@@ -822,7 +803,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Navigation */}
           <nav className="px-4 space-y-0.5">
             <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1.5">
               Menu
@@ -875,7 +855,6 @@ export default function AdminDashboard() {
             ))}
           </nav>
 
-          {/* Performance */}
           <div className="px-4 py-3">
             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
               <div className="flex items-center justify-between mb-2">
@@ -898,7 +877,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="px-4 py-3 border-t border-slate-800">
             <Link
               to="/"
@@ -917,7 +895,6 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        {/* Mobile overlay */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
@@ -925,9 +902,7 @@ export default function AdminDashboard() {
           />
         )}
 
-        {/* Main Content */}
         <main className="flex-1 min-w-0 lg:ml-72">
-          {/* Header */}
           <header className="hidden lg:block bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-20">
             <div className="flex items-center justify-between">
               <div>
@@ -956,12 +931,9 @@ export default function AdminDashboard() {
             </div>
           </header>
 
-          {/* Content Area */}
           <div className="p-4 lg:p-6">
-            {/* DASHBOARD SECTION */}
             {activeSection === "dashboard" && (
               <div className="space-y-6 animate-fadeIn">
-                {/* Alert */}
                 {stats.pending > 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-4">
                     <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -984,7 +956,6 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {/* Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard
                     icon={CalendarCheck}
@@ -1017,9 +988,7 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {/* Second Row */}
                 <div className="grid lg:grid-cols-3 gap-6">
-                  {/* Performance Chart */}
                   <div className="bg-white rounded-2xl p-6 border border-slate-200">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -1104,7 +1073,6 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Revenue */}
                   <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
                     <div className="relative z-10">
@@ -1149,7 +1117,6 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Quick Actions */}
                   <div className="bg-white rounded-2xl p-6 border border-slate-200">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
@@ -1191,7 +1158,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Recent Bookings */}
                 <RecentBookingsTable
                   bookings={filteredBookings.slice(0, 5)}
                   onView={setSelectedBooking}
@@ -1201,7 +1167,6 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* BOOKINGS SECTION */}
             {activeSection === "bookings" && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1241,7 +1206,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Booking Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                   <MiniStat
                     label="All"
@@ -1279,7 +1243,6 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {/* Bookings Table */}
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                   {filteredBookings.length > 0 ? (
                     <div className="overflow-x-auto">
@@ -1352,7 +1315,10 @@ export default function AdminDashboard() {
                                 </p>
                               </td>
                               <td className="px-5 py-4">
-                                <StatusBadge status={booking.status} />
+                                <StatusBadge
+                                  status={booking.status}
+                                  paymentStatus={booking.paymentStatus}
+                                />
                               </td>
                               <td className="px-5 py-4 hidden md:table-cell">
                                 {booking.status === "Approved" ? (
@@ -1404,7 +1370,9 @@ export default function AdminDashboard() {
                                         onClick={() =>
                                           handleStatusUpdate(
                                             booking._id || booking.bookingId,
-                                            "Approved",
+                                            booking.paymentStatus === "paid"
+                                              ? "Completed"
+                                              : "Approved",
                                           )
                                         }
                                         className="p-2 hover:bg-emerald-100 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors"
@@ -1475,10 +1443,8 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* SERVICES SECTION */}
             {activeSection === "services" && (
               <div className="space-y-6 animate-fadeIn">
-                {/* Header with stats toggle */}
                 <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-2xl p-6 text-white relative overflow-hidden">
                   <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]"></div>
                   <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1519,7 +1485,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Analytics Panel */}
                 {showServiceStats && serviceStats && (
                   <div className="bg-gradient-to-br from-slate-50 via-violet-50 to-indigo-50 rounded-2xl p-6 border border-violet-200 shadow-sm">
                     <div className="flex items-center justify-between mb-5">
@@ -1608,7 +1573,7 @@ export default function AdminDashboard() {
                         <p className="text-xs text-slate-500">Avg Price</p>
                       </div>
                     </div>
-                    {/* Category breakdown */}
+
                     {serviceStats.categories && (
                       <div>
                         <p className="text-sm font-medium text-slate-700 mb-3">
@@ -1674,11 +1639,8 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {/* Filters & Actions Bar */}
                 <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
-                  {/* Main filters row */}
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Search */}
                     <div className="relative flex-1 max-w-xs">
                       <Search
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1693,7 +1655,6 @@ export default function AdminDashboard() {
                       />
                     </div>
 
-                    {/* Status Filter */}
                     <select
                       value={serviceFilter}
                       onChange={(e) => setServiceFilter(e.target.value)}
@@ -1704,7 +1665,6 @@ export default function AdminDashboard() {
                       <option value="inactive">Inactive</option>
                     </select>
 
-                    {/* Category Filter */}
                     <select
                       value={serviceCategoryFilter}
                       onChange={(e) => setServiceCategoryFilter(e.target.value)}
@@ -1718,7 +1678,6 @@ export default function AdminDashboard() {
                       ))}
                     </select>
 
-                    {/* Sort By */}
                     <div className="flex items-center gap-1">
                       <select
                         value={serviceSortBy}
@@ -1752,7 +1711,6 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    {/* Price Range Toggle */}
                     <button
                       onClick={() => setShowPriceFilter(!showPriceFilter)}
                       className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors border ${showPriceFilter ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
@@ -1761,7 +1719,6 @@ export default function AdminDashboard() {
                       Price Filter
                     </button>
 
-                    {/* View Mode Toggle */}
                     <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                       <button
                         onClick={() => setServiceViewMode("grid")}
@@ -1778,7 +1735,6 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Bulk Actions - separate row */}
                   {selectedServices.length > 0 && (
                     <div className="flex items-center justify-between gap-3 bg-blue-50 rounded-lg px-4 py-3 border border-blue-200">
                       <span className="text-sm font-medium text-blue-700">
@@ -1814,7 +1770,6 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  {/* Price Range Filter */}
                   {showPriceFilter && (
                     <div className="bg-slate-50 rounded-lg p-4 animate-fadeIn">
                       <div className="flex flex-wrap items-center gap-6">
@@ -1891,7 +1846,6 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  {/* Results info */}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">
                       Showing{" "}
@@ -1925,13 +1879,12 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Services List/Grid */}
                 {servicesLoading ? (
                   <LoadingSpinner />
                 ) : filteredServices.length > 0 ? (
                   serviceViewMode === "grid" ? (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                      {filteredServices.map((service) => {
+                      {paginatedServices.map((service) => {
                         const IconComponent = iconMap[service.icon] || Wrench;
                         const categoryInfo = serviceCategories.find(
                           (c) => c.value === service.category,
@@ -1952,7 +1905,6 @@ export default function AdminDashboard() {
                             key={service._id}
                             className={`group bg-white rounded-xl border transition-all duration-200 hover:shadow-lg relative ${isSelected ? "border-blue-500 ring-2 ring-blue-100" : "border-slate-200 hover:border-slate-300"} ${service.status === "inactive" ? "opacity-50" : ""}`}
                           >
-                            {/* Top section with checkbox and badges */}
                             <div className="p-4 pb-0 flex items-start justify-between">
                               <input
                                 type="checkbox"
@@ -1981,7 +1933,6 @@ export default function AdminDashboard() {
                             </div>
 
                             <div className="p-4">
-                              {/* Icon and Category */}
                               <div className="flex items-center gap-3 mb-4">
                                 <div
                                   className={`w-12 h-12 bg-${categoryInfo?.color || "blue"}-100 rounded-xl flex items-center justify-center`}
@@ -2014,7 +1965,6 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
 
-                              {/* Name & Description */}
                               <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
                                 {service.name}
                               </h3>
@@ -2022,7 +1972,6 @@ export default function AdminDashboard() {
                                 {service.description}
                               </p>
 
-                              {/* Price and Status */}
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-baseline gap-2">
                                   <span className="text-xl font-bold text-slate-900">
@@ -2046,7 +1995,6 @@ export default function AdminDashboard() {
                                 </button>
                               </div>
 
-                              {/* Actions */}
                               <div className="flex items-center gap-1 pt-3 border-t border-slate-100">
                                 <button
                                   onClick={() =>
@@ -2121,7 +2069,6 @@ export default function AdminDashboard() {
                       })}
                     </div>
                   ) : (
-                    /* List View */
                     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[900px]">
@@ -2163,7 +2110,7 @@ export default function AdminDashboard() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {filteredServices.map((service) => {
+                            {paginatedServices.map((service) => {
                               const IconComponent =
                                 iconMap[service.icon] || Wrench;
                               const categoryInfo = serviceCategories.find(
@@ -2352,7 +2299,6 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* USERS SECTION */}
             {activeSection === "users" && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -2379,7 +2325,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard
                     icon={Users}
@@ -2507,7 +2452,6 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* REVIEWS SECTION */}
             {activeSection === "reviews" && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -2538,7 +2482,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <MiniStat
                     label="All Reviews"
@@ -2708,7 +2651,6 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {/* Booking Detail Modal */}
       {selectedBooking && (
         <Modal onClose={() => setSelectedBooking(null)}>
           <div className="bg-slate-900 p-6 text-white">
@@ -2773,10 +2715,12 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
               <span className="text-slate-500">Status</span>
-              <StatusBadge status={selectedBooking.status} />
+              <StatusBadge
+                status={selectedBooking.status}
+                paymentStatus={selectedBooking.paymentStatus}
+              />
             </div>
 
-            {/* Progress Tracking */}
             {selectedBooking.status === "Approved" && (
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
                 <div className="flex items-center justify-between mb-3">
@@ -2882,7 +2826,6 @@ export default function AdminDashboard() {
         </Modal>
       )}
 
-      {/* Progress Update Modal */}
       {progressModal && (
         <Modal onClose={() => setProgressModal(null)}>
           <div className="p-6">
@@ -2933,7 +2876,6 @@ export default function AdminDashboard() {
         </Modal>
       )}
 
-      {/* Service Quick View Modal */}
       {serviceQuickView && (
         <Modal onClose={() => setServiceQuickView(null)}>
           <div className="p-6 max-h-[80vh] overflow-y-auto">
@@ -2951,7 +2893,6 @@ export default function AdminDashboard() {
 
               return (
                 <>
-                  {/* Header */}
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-4">
                       <div
@@ -2993,7 +2934,6 @@ export default function AdminDashboard() {
                     </button>
                   </div>
 
-                  {/* Description */}
                   <div className="mb-6">
                     <h4 className="text-sm font-medium text-slate-500 mb-2">
                       Description
@@ -3003,7 +2943,6 @@ export default function AdminDashboard() {
                     </p>
                   </div>
 
-                  {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-4 mb-6">
                     <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
@@ -3050,7 +2989,6 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Quick Actions */}
                   <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-200">
                     <button
                       onClick={() => {
@@ -3111,7 +3049,6 @@ export default function AdminDashboard() {
         </Modal>
       )}
 
-      {/* Service Form Modal */}
       {showServiceForm && (
         <Modal
           onClose={() => {
@@ -3125,7 +3062,6 @@ export default function AdminDashboard() {
               {editingService ? "Edit Service" : "Add New Service"}
             </h3>
             <form onSubmit={handleServiceSubmit} className="space-y-5">
-              {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -3160,7 +3096,6 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {/* Category */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Category *
@@ -3183,7 +3118,6 @@ export default function AdminDashboard() {
                   </select>
                 </div>
 
-                {/* Icon */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Icon
@@ -3203,7 +3137,6 @@ export default function AdminDashboard() {
                   </select>
                 </div>
 
-                {/* Price */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Price ($) *
@@ -3222,7 +3155,6 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {/* Duration */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Duration (minutes)
@@ -3242,7 +3174,6 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {/* Discount */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Discount (%)
@@ -3263,7 +3194,6 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {/* Status */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Status
@@ -3281,7 +3211,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Featured Toggle */}
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
                 <button
                   type="button"
@@ -3305,7 +3234,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Preview */}
               {(serviceForm.price || serviceForm.discount > 0) && (
                 <div className="p-4 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-xl border border-emerald-100">
                   <p className="text-xs font-medium text-slate-600 mb-2">
@@ -3367,28 +3295,38 @@ export default function AdminDashboard() {
   );
 }
 
-// Helper Components
-function StatusBadge({ status }) {
+function StatusBadge({ status, paymentStatus }) {
+  let key = status;
+  if (status === "Pending" && paymentStatus === "paid") key = "PendingPaid";
   const styles = {
     Pending: "bg-amber-100 text-amber-700 border-amber-200",
+    PendingPaid: "bg-sky-100 text-sky-700 border-sky-200",
     Approved: "bg-blue-100 text-blue-700 border-blue-200",
     Completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
     Rejected: "bg-red-100 text-red-700 border-red-200",
   };
   const dots = {
     Pending: "bg-amber-500",
+    PendingPaid: "bg-sky-500",
     Approved: "bg-blue-500",
     Completed: "bg-emerald-500",
     Rejected: "bg-red-500",
   };
+  const labels = {
+    Pending: "Pending",
+    PendingPaid: "Awaiting Review",
+    Approved: "Approved",
+    Completed: "Completed",
+    Rejected: "Rejected",
+  };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${styles[status] || styles.Pending}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${styles[key] || styles.Pending}`}
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full ${dots[status] || dots.Pending}`}
+        className={`w-1.5 h-1.5 rounded-full ${dots[key] || dots.Pending}`}
       ></span>
-      {status}
+      {labels[key] || key}
     </span>
   );
 }
@@ -3577,7 +3515,10 @@ function RecentBookingsTable({ bookings, onView, onStatusUpdate, onViewAll }) {
                   </p>
                 </td>
                 <td className="px-5 py-4">
-                  <StatusBadge status={booking.status} />
+                  <StatusBadge
+                    status={booking.status}
+                    paymentStatus={booking.paymentStatus}
+                  />
                 </td>
                 <td className="px-5 py-4">
                   <div className="flex items-center justify-end gap-1">

@@ -10,36 +10,28 @@ import serviceRoutes from './routes/services.js';
 import User from './models/User.js';
 import Service from './models/Service.js';
 
-// Get the directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables from .env file
 dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
 
-// Connect to database
 connectDB();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/services', serviceRoutes);
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Initialize default admin user and services
 const initializeData = async () => {
   try {
-    // Create default admin if not exists
     const adminExists = await User.findOne({ email: 'admin@vehiclecare.com' });
     if (!adminExists) {
       await User.create({
@@ -51,7 +43,6 @@ const initializeData = async () => {
       console.log('Default admin user created');
     }
 
-    // Create default services if none exist
     const servicesCount = await Service.countDocuments();
     if (servicesCount === 0) {
       const defaultServices = [

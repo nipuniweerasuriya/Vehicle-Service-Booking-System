@@ -15,6 +15,9 @@ import {
   Sparkles,
   Home,
   Search,
+  CreditCard,
+  Banknote,
+  Receipt,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -34,7 +37,6 @@ export default function BookingConfirmation() {
     return null;
   }
 
-  // Format date
   const formatDate = (dateStr) => {
     const options = {
       weekday: "long",
@@ -55,7 +57,6 @@ export default function BookingConfirmation() {
 
       <main className="min-h-screen py-16 px-4 bg-gradient-mesh">
         <div className="max-w-2xl mx-auto">
-          {/* Success Animation */}
           <div className="text-center mb-10 animate-scale-in">
             <div className="relative inline-flex items-center justify-center mb-6">
               <div className="absolute w-24 h-24 bg-emerald-400/30 rounded-full animate-ping"></div>
@@ -74,9 +75,7 @@ export default function BookingConfirmation() {
             </p>
           </div>
 
-          {/* Confirmation Card */}
           <div className="glass-card p-0 overflow-hidden mb-8 animate-fade-in">
-            {/* Booking ID Header */}
             <div className="bg-gradient-to-r from-sky-500 to-cyan-500 p-6 text-white">
               <p className="text-sky-100 text-sm font-medium mb-2">
                 Your Booking ID
@@ -99,7 +98,6 @@ export default function BookingConfirmation() {
             </div>
 
             <div className="p-6">
-              {/* Status Badge */}
               <div className="mb-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-xl font-medium">
                   <Clock size={18} />
@@ -111,9 +109,7 @@ export default function BookingConfirmation() {
                 </p>
               </div>
 
-              {/* Booking Details Grid */}
               <div className="grid md:grid-cols-2 gap-4 mb-6">
-                {/* Customer Info */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <User size={18} className="text-sky-500" />
@@ -125,7 +121,6 @@ export default function BookingConfirmation() {
                   <p className="text-slate-600">{currentBooking.phone}</p>
                 </div>
 
-                {/* Vehicle Info */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Car size={18} className="text-sky-500" />
@@ -139,7 +134,6 @@ export default function BookingConfirmation() {
                   </p>
                 </div>
 
-                {/* Service Info */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Wrench size={18} className="text-sky-500" />
@@ -149,11 +143,12 @@ export default function BookingConfirmation() {
                     {currentBooking.service}
                   </p>
                   <p className="text-sky-600 font-bold">
-                    {currentBooking.servicePrice || "Contact for price"}
+                    {Number(currentBooking.servicePrice) > 0
+                      ? `$${Number(currentBooking.servicePrice).toFixed(2)}`
+                      : "$0.00"}
                   </p>
                 </div>
 
-                {/* Appointment Info */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Calendar size={18} className="text-sky-500" />
@@ -168,7 +163,90 @@ export default function BookingConfirmation() {
                 </div>
               </div>
 
-              {/* Service Center Info */}
+              <div className="border-t border-slate-200 pt-6 mb-6">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <Receipt size={20} className="text-sky-500" />
+                  Payment Summary
+                </h3>
+
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-4 border-b border-emerald-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                          {currentBooking.paymentMethod === "card" ? (
+                            <CreditCard
+                              size={20}
+                              className="text-emerald-600"
+                            />
+                          ) : (
+                            <Banknote size={20} className="text-emerald-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            Payment Method
+                          </p>
+                          <p className="text-sm text-slate-600">
+                            {currentBooking.paymentMethod === "card"
+                              ? `Credit/Debit Card ${currentBooking.cardLast4 ? `(**** ${currentBooking.cardLast4})` : ""}`
+                              : "Cash on Service Completion"}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          currentBooking.paymentStatus === "paid"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {currentBooking.paymentStatus === "paid"
+                          ? "Paid"
+                          : "Pending"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Service</span>
+                        <span>{currentBooking.service}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Service Price</span>
+                        <span className="font-medium">
+                          {Number(currentBooking.servicePrice) > 0
+                            ? `$${Number(currentBooking.servicePrice).toFixed(2)}`
+                            : "$0.00"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Tax & Fees</span>
+                        <span className="font-medium">Included</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-emerald-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-slate-900">
+                          Total Amount
+                        </span>
+                        <span className="text-2xl font-bold text-emerald-600">
+                          {Number(currentBooking.servicePrice) > 0
+                            ? `$${Number(currentBooking.servicePrice).toFixed(2)}`
+                            : "$0.00"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2">
+                        {currentBooking.paymentMethod === "card"
+                          ? "Payment will be processed after service completion"
+                          : "Please pay in cash at the service center after completion"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="border-t border-slate-200 pt-6">
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                   <MapPin size={20} className="text-sky-500" />
@@ -219,7 +297,6 @@ export default function BookingConfirmation() {
                 </div>
               </div>
 
-              {/* Important Notes */}
               <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
                 <h4 className="font-bold text-amber-800 mb-3 flex items-center gap-2">
                   <Sparkles size={18} />
@@ -241,14 +318,15 @@ export default function BookingConfirmation() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle size={16} className="flex-shrink-0 mt-0.5" />
-                    Payment details will be provided after service assessment
+                    {currentBooking.paymentMethod === "card"
+                      ? "Your card will be charged after service completion"
+                      : "Please prepare cash payment for service completion"}
                   </li>
                 </ul>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <Link
               to="/track"
@@ -266,7 +344,6 @@ export default function BookingConfirmation() {
             </button>
           </div>
 
-          {/* Return Home Link */}
           <div className="text-center">
             <p className="text-slate-500 mb-4">Or explore more services</p>
             <Link

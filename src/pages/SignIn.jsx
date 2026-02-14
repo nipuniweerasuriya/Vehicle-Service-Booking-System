@@ -26,7 +26,6 @@ export default function SignIn() {
   const location = useLocation();
   const { login, setIsAdminLoggedIn } = useContext(AuthContext);
 
-  // Get redirect info from state (e.g., when redirected from booking)
   const redirectMessage = location.state?.message;
   const redirectFrom = location.state?.from;
 
@@ -43,7 +42,6 @@ export default function SignIn() {
 
   useEffect(() => {
     setMounted(true);
-    // Check for remembered email
     const savedEmail = localStorage.getItem("rememberedEmail");
     if (savedEmail) {
       setFormData((prev) => ({ ...prev, email: savedEmail }));
@@ -67,7 +65,6 @@ export default function SignIn() {
       return;
     }
 
-    // Handle remember me
     if (rememberMe) {
       localStorage.setItem("rememberedEmail", formData.email);
     } else {
@@ -79,15 +76,12 @@ export default function SignIn() {
       const userData = response.data;
 
       if (userData.role === "admin") {
-        // Admin login - store admin data and redirect to dashboard
         localStorage.setItem("adminToken", userData.token);
         localStorage.setItem("adminUser", JSON.stringify(userData));
         setIsAdminLoggedIn(true);
         navigate("/admin/dashboard");
       } else {
-        // Regular user login
         login(userData);
-        // Redirect to original page or my-bookings
         navigate(redirectFrom || "/my-bookings");
       }
     } catch (err) {
@@ -108,7 +102,7 @@ export default function SignIn() {
       <Header />
 
       <main className="min-h-screen py-12 px-4 bg-gradient-mesh relative overflow-hidden">
-        {/* Decorative elements */}
+        
         <div className="absolute top-20 left-10 w-72 h-72 bg-sky-400/20 rounded-full blur-3xl animate-float pointer-events-none" />
         <div
           className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-float pointer-events-none"
@@ -118,7 +112,7 @@ export default function SignIn() {
 
         <div className="max-w-5xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
-            {/* Left Side - Benefits */}
+            
             <div
               className={`hidden lg:block transition-all duration-700 ${mounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"}`}
             >
@@ -179,11 +173,11 @@ export default function SignIn() {
               </div>
             </div>
 
-            {/* Right Side - Form */}
+            
             <div
               className={`transition-all duration-700 ${mounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}
             >
-              {/* Header */}
+              
               <div className="text-center mb-8 lg:hidden">
                 <div className="relative inline-block mb-6">
                   <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-cyan-400 rounded-2xl blur-xl opacity-50 animate-pulse-glow pointer-events-none" />
@@ -199,7 +193,7 @@ export default function SignIn() {
                 </p>
               </div>
 
-              {/* Form Card */}
+              
               <div className="glass-card p-8 relative z-20">
                 <div className="hidden lg:block mb-6">
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">
@@ -211,7 +205,7 @@ export default function SignIn() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Redirect Message (e.g., from booking attempt) */}
+                  
                   {redirectMessage && (
                     <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200 rounded-xl p-4 flex items-center gap-3 animate-scale-in">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -223,7 +217,7 @@ export default function SignIn() {
                     </div>
                   )}
 
-                  {/* Error Message */}
+                  
                   {error && (
                     <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-xl p-4 flex items-center gap-3 animate-scale-in">
                       <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -233,7 +227,7 @@ export default function SignIn() {
                     </div>
                   )}
 
-                  {/* Email */}
+                  
                   <div className="space-y-2">
                     <label className="form-label flex items-center gap-2">
                       <Mail size={14} className="text-sky-500" />
@@ -258,7 +252,7 @@ export default function SignIn() {
                     </div>
                   </div>
 
-                  {/* Password */}
+                  
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="form-label flex items-center gap-2">
@@ -302,7 +296,7 @@ export default function SignIn() {
                     </div>
                   </div>
 
-                  {/* Remember Me */}
+                  
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -322,7 +316,7 @@ export default function SignIn() {
                     </span>
                   </div>
 
-                  {/* Submit Button */}
+                  
                   <button
                     type="submit"
                     disabled={loading}
@@ -343,7 +337,7 @@ export default function SignIn() {
                   </button>
                 </form>
 
-                {/* Divider */}
+                
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-slate-200/70"></div>
@@ -355,7 +349,7 @@ export default function SignIn() {
                   </div>
                 </div>
 
-                {/* Social Login */}
+                
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <button className="flex items-center justify-center gap-2 py-3 px-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors group">
                     <Chrome
@@ -377,7 +371,7 @@ export default function SignIn() {
                   </button>
                 </div>
 
-                {/* Sign Up Link */}
+                
                 <p className="text-center text-slate-600">
                   Don't have an account?{" "}
                   <Link
@@ -389,7 +383,7 @@ export default function SignIn() {
                 </p>
               </div>
 
-              {/* Trust badges */}
+              
               <div className="mt-6 flex items-center justify-center gap-6 text-slate-500">
                 <div className="flex items-center gap-2">
                   <Shield size={16} className="text-emerald-500" />

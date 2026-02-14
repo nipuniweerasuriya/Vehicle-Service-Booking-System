@@ -6,14 +6,11 @@ import {
 } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-// Context
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { BookingContext } from "./context/BookingContext";
 
-// API
 import { bookingsAPI, servicesAPI, authAPI } from "./api";
 
-// Pages
 import Home from "./pages/Home";
 import ServiceList from "./pages/ServiceList";
 import BookingConfirmation from "./pages/BookingConfirmation";
@@ -31,14 +28,12 @@ function App() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Check if admin is already logged in
   useEffect(() => {
     const adminToken = localStorage.getItem("adminToken");
     if (adminToken) {
       setIsAdminLoggedIn(true);
     }
 
-    // Check for user data
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
@@ -50,15 +45,18 @@ function App() {
     }
   }, []);
 
-  // Fetch services on mount
   useEffect(() => {
     const fetchServices = async () => {
       try {
+        console.log("Fetching services...");
         const response = await servicesAPI.getAll();
+        console.log("Services response:", response);
+        console.log("Services data:", response.data);
         setServices(response.data);
+        console.log("Services set to state");
       } catch (error) {
         console.error("Error fetching services:", error);
-        // Fallback to default services if API fails
+        console.log("Falling back to hardcoded services");
         setServices([
           {
             _id: "1",
@@ -110,7 +108,6 @@ function App() {
     fetchServices();
   }, []);
 
-  // Fetch bookings function
   const fetchBookings = async () => {
     try {
       const response = await bookingsAPI.getAll();
@@ -132,7 +129,6 @@ function App() {
     }
   };
 
-  // Fetch bookings when admin logs in
   useEffect(() => {
     if (isAdminLoggedIn) {
       fetchBookings();
@@ -140,7 +136,6 @@ function App() {
   }, [isAdminLoggedIn]);
 
   const addBooking = async (booking) => {
-    // Get user data from localStorage
     const userData = localStorage.getItem("user");
     const user = userData ? JSON.parse(userData) : null;
 
@@ -150,6 +145,7 @@ function App() {
         phone: booking.phone,
         vehicleNumber: booking.vehicleNo,
         serviceType: booking.service,
+        servicePrice: booking.servicePrice,
         date: booking.date,
         time: booking.time,
         userId: user?._id || null,
@@ -161,6 +157,7 @@ function App() {
         phone: response.data.phone,
         vehicleNo: response.data.vehicleNumber,
         service: response.data.serviceType,
+        servicePrice: response.data.servicePrice,
         date: response.data.date,
         time: response.data.time,
         status: response.data.status,
@@ -173,7 +170,6 @@ function App() {
       return newBooking;
     } catch (error) {
       console.error("Error creating booking:", error);
-      // Fallback to local state if API fails
       const newBooking = {
         ...booking,
         id: `BK${String(bookings.length + 1).padStart(3, "0")}`,
@@ -196,7 +192,6 @@ function App() {
       );
     } catch (error) {
       console.error("Error updating booking status:", error);
-      // Fallback to local state update
       setBookings(
         bookings.map((b) =>
           b.id === bookingId ? { ...b, status: newStatus } : b,
@@ -212,7 +207,6 @@ function App() {
       return response.data;
     } catch (error) {
       console.error("Error creating service:", error);
-      // Fallback to local state
       const newService = {
         ...service,
         _id: String(services.length + 1),
@@ -300,18 +294,15 @@ function App() {
       >
         <Router>
           <Routes>
-            {/* Customer Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/services" element={<ServiceList />} />
             <Route path="/confirmation" element={<BookingConfirmation />} />
 
-            {/* User Auth Routes */}
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/my-bookings" element={<MyBookings />} />
             <Route path="/reviews" element={<Reviews />} />
 
-            {/* Admin Routes - All admin functionality is in: AdminDashboard */}
             <Route
               path="/admin/login"
               element={<Navigate to="/signin" replace />}
@@ -324,7 +315,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Redirect all admin sub-routes to dashboard */}
+
             <Route
               path="/admin/bookings"
               element={<Navigate to="/admin/dashboard" replace />}
@@ -342,7 +333,6 @@ function App() {
               element={<Navigate to="/admin/dashboard" replace />}
             />
 
-            {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>

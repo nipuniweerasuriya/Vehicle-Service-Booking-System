@@ -22,7 +22,6 @@ export default function Reviews() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  // Form state
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -130,12 +129,12 @@ export default function Reviews() {
       <Header />
 
       <main className="min-h-screen py-10 px-4 bg-gradient-mesh relative overflow-hidden">
-        {/* Background decorations */}
+        
         <div className="absolute top-20 right-20 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-20 w-72 h-72 bg-orange-400/10 rounded-full blur-3xl" />
 
         <div className="max-w-4xl mx-auto relative z-10">
-          {/* Page Header */}
+          
           <div className="text-center mb-10 animate-slide-down">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl mb-4 shadow-lg shadow-amber-500/30">
               <MessageSquare className="w-8 h-8 text-white" />
@@ -148,7 +147,7 @@ export default function Reviews() {
             </p>
           </div>
 
-          {/* Stats */}
+          
           <div className="grid grid-cols-2 gap-4 mb-10">
             <div className="glass-card p-6 text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -167,7 +166,7 @@ export default function Reviews() {
             </div>
           </div>
 
-          {/* Submit Review Form */}
+          
           {isUserLoggedIn ? (
             <div className="glass-card p-8 mb-10 animate-slide-up">
               <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
@@ -193,7 +192,7 @@ export default function Reviews() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Rating */}
+                
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Your Rating
@@ -201,7 +200,7 @@ export default function Reviews() {
                   {renderStars(rating, true)}
                 </div>
 
-                {/* Service Type */}
+                
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Service Used
@@ -220,7 +219,7 @@ export default function Reviews() {
                   </select>
                 </div>
 
-                {/* Comment */}
+                
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Your Review
@@ -269,7 +268,7 @@ export default function Reviews() {
             </div>
           )}
 
-          {/* Reviews List */}
+          
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-slate-900 mb-4">
               What Our Customers Say

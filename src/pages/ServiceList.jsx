@@ -23,6 +23,9 @@ import {
   Timer,
   Tag,
   Filter,
+  CreditCard,
+  Banknote,
+  Lock,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -45,12 +48,15 @@ export default function ServiceList() {
     vehicleModel: "",
     date: "",
     time: "",
+    paymentMethod: "cash",
+    cardNumber: "",
+    cardExpiry: "",
+    cardCvv: "",
+    cardName: "",
   });
   const [errors, setErrors] = useState({});
 
-  // Pre-fill user data when modal opens
   const openBookingModal = (service) => {
-    // Require login before booking
     if (!isUserLoggedIn) {
       navigate("/signin", {
         state: {
@@ -69,6 +75,11 @@ export default function ServiceList() {
       vehicleModel: "",
       date: "",
       time: "",
+      paymentMethod: "cash",
+      cardNumber: "",
+      cardExpiry: "",
+      cardCvv: "",
+      cardName: "",
     });
     setStep(1);
     setErrors({});
@@ -81,7 +92,6 @@ export default function ServiceList() {
     setStep(1);
   };
 
-  // Get next 7 days for quick selection
   const quickDates = useMemo(() => {
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -120,6 +130,24 @@ export default function ServiceList() {
         newErrors.vehicleNo = "Vehicle number is required";
       if (!formData.vehicleModel.trim())
         newErrors.vehicleModel = "Vehicle model is required";
+      if (!formData.paymentMethod)
+        newErrors.paymentMethod = "Please select a payment method";
+      if (formData.paymentMethod === "card") {
+        if (
+          !formData.cardNumber.trim() ||
+          formData.cardNumber.replace(/\s/g, "").length !== 16
+        )
+          newErrors.cardNumber = "Enter valid 16-digit card number";
+        if (
+          !formData.cardExpiry.trim() ||
+          !/^\d{2}\/\d{2}$/.test(formData.cardExpiry)
+        )
+          newErrors.cardExpiry = "Enter valid expiry (MM/YY)";
+        if (!formData.cardCvv.trim() || !/^\d{3,4}$/.test(formData.cardCvv))
+          newErrors.cardCvv = "Enter valid CVV";
+        if (!formData.cardName.trim())
+          newErrors.cardName = "Cardholder name is required";
+      }
       if (!isUserLoggedIn) {
         if (!formData.name.trim()) newErrors.name = "Name is required";
         if (!formData.phone.trim()) newErrors.phone = "Phone is required";
@@ -153,10 +181,16 @@ export default function ServiceList() {
         servicePrice: selectedService.price,
         date: formData.date,
         time: formData.time,
+        paymentMethod: formData.paymentMethod,
+        paymentStatus: "pending",
+        cardLast4:
+          formData.paymentMethod === "card"
+            ? formData.cardNumber.slice(-4)
+            : null,
       };
 
       await addBooking(bookingData);
-      setStep(4); // Success step
+      setStep(4);
     } catch (error) {
       console.error("Booking error:", error);
     } finally {
@@ -182,7 +216,6 @@ export default function ServiceList() {
     Shield: CheckCircle,
   };
 
-  // Category colors
   const categoryColors = {
     maintenance: {
       bg: "from-blue-500 to-cyan-500",
@@ -202,7 +235,6 @@ export default function ServiceList() {
     },
   };
 
-  // Filter only active services
   const activeServices = services.filter((s) => s.status !== "inactive");
   const featuredServices = activeServices.filter((s) => s.featured);
   const regularServices = activeServices.filter((s) => !s.featured);
@@ -213,7 +245,6 @@ export default function ServiceList() {
 
       <main className="min-h-screen py-16 px-4 bg-gradient-mesh">
         <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
           <div className="mb-12 animate-fade-in text-center">
             <div className="mb-4 inline-block">
               <span className="bg-gradient-to-r from-sky-100 to-cyan-100 px-5 py-2 rounded-full text-sm font-bold text-sky-700">
@@ -231,7 +262,6 @@ export default function ServiceList() {
             </p>
           </div>
 
-          {/* Featured Services */}
           {featuredServices.length > 0 && (
             <div className="mb-12">
               <div className="flex items-center gap-2 mb-6">
@@ -260,12 +290,10 @@ export default function ServiceList() {
                       key={service._id || service.id}
                       className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative border-2 border-amber-200 bg-gradient-to-br from-amber-50/50 to-white"
                     >
-                      {/* Featured badge */}
                       <div className="absolute -top-3 left-4 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
                         <Star size={12} className="fill-white" /> Featured
                       </div>
 
-                      {/* Discount badge */}
                       {service.discount > 0 && (
                         <div className="absolute -top-3 right-4 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
                           -{service.discount}% OFF
@@ -290,7 +318,6 @@ export default function ServiceList() {
                         </div>
                       </div>
 
-                      {/* Category badge */}
                       <span
                         className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 capitalize ${catColors.light}`}
                       >
@@ -326,7 +353,6 @@ export default function ServiceList() {
             </div>
           )}
 
-          {/* All Services Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {regularServices.map((service) => {
               const IconComponent = iconMap[service.icon] || Wrench;
@@ -346,7 +372,6 @@ export default function ServiceList() {
                   key={service._id || service.id}
                   className="glass-card p-6 group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative"
                 >
-                  {/* Discount badge */}
                   {service.discount > 0 && (
                     <div className="absolute -top-3 right-4 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
                       -{service.discount}% OFF
@@ -371,7 +396,6 @@ export default function ServiceList() {
                     </div>
                   </div>
 
-                  {/* Category badge */}
                   <span
                     className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-2 capitalize ${catColors.light}`}
                   >
@@ -405,7 +429,6 @@ export default function ServiceList() {
             })}
           </div>
 
-          {/* Additional Info */}
           <div className="glass-card p-8 bg-gradient-to-r from-sky-50/80 via-cyan-50/80 to-teal-50/80">
             <h2 className="text-2xl font-bold mb-4 text-slate-900">
               Not sure which service you need?
@@ -422,7 +445,6 @@ export default function ServiceList() {
             </div>
           </div>
 
-          {/* FAQ Section */}
           <div className="mt-16">
             <h2 className="text-3xl font-bold mb-8 text-center">
               Frequently Asked Questions
@@ -462,11 +484,9 @@ export default function ServiceList() {
         </div>
       </main>
 
-      {/* Booking Modal */}
       {showModal && selectedService && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
-            {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between rounded-t-2xl">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">
@@ -482,7 +502,6 @@ export default function ServiceList() {
               </button>
             </div>
 
-            {/* Progress Steps */}
             {step < 4 && (
               <div className="px-6 pt-4">
                 <div className="flex items-center justify-between mb-6">
@@ -513,15 +532,14 @@ export default function ServiceList() {
             )}
 
             <div className="p-6 pt-2">
-              {/* Step 1: Schedule */}
               {step === 1 && (
                 <div className="space-y-6 animate-fade-in">
-                  {/* Date Selection */}
                   <div>
                     <label className="form-label flex items-center gap-2">
                       <Calendar size={16} className="text-sky-500" />
                       Select Date
                     </label>
+
                     <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 mt-2">
                       {quickDates.map((d) => (
                         <button
@@ -541,12 +559,26 @@ export default function ServiceList() {
                         </button>
                       ))}
                     </div>
+
+                    <div className="mt-4">
+                      <p className="text-sm text-slate-500 mb-2">
+                        Or pick any date:
+                      </p>
+                      <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) =>
+                          setFormData({ ...formData, date: e.target.value })
+                        }
+                        className="input-field cursor-pointer"
+                      />
+                    </div>
+
                     {errors.date && (
                       <p className="text-red-500 text-sm mt-1">{errors.date}</p>
                     )}
                   </div>
 
-                  {/* Time Selection */}
                   <div>
                     <label className="form-label flex items-center gap-2">
                       <Clock size={16} className="text-sky-500" />
@@ -575,10 +607,8 @@ export default function ServiceList() {
                 </div>
               )}
 
-              {/* Step 2: Details */}
               {step === 2 && (
                 <div className="space-y-4 animate-fade-in">
-                  {/* Vehicle Info */}
                   <div>
                     <label className="form-label flex items-center gap-2">
                       <Car size={16} className="text-sky-500" />
@@ -624,7 +654,179 @@ export default function ServiceList() {
                     )}
                   </div>
 
-                  {/* Contact Info (only for non-logged-in users) */}
+                  <div className="border-t border-slate-200 pt-4 mt-4">
+                    <label className="form-label flex items-center gap-2 mb-3">
+                      <CreditCard size={16} className="text-sky-500" />
+                      Payment Method
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, paymentMethod: "cash" })
+                        }
+                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                          formData.paymentMethod === "cash"
+                            ? "border-sky-500 bg-sky-50"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <Banknote
+                          size={24}
+                          className={
+                            formData.paymentMethod === "cash"
+                              ? "text-sky-500"
+                              : "text-slate-400"
+                          }
+                        />
+                        <span
+                          className={`font-medium ${formData.paymentMethod === "cash" ? "text-sky-700" : "text-slate-600"}`}
+                        >
+                          Cash
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          Pay at pickup
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, paymentMethod: "card" })
+                        }
+                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                          formData.paymentMethod === "card"
+                            ? "border-sky-500 bg-sky-50"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <CreditCard
+                          size={24}
+                          className={
+                            formData.paymentMethod === "card"
+                              ? "text-sky-500"
+                              : "text-slate-400"
+                          }
+                        />
+                        <span
+                          className={`font-medium ${formData.paymentMethod === "card" ? "text-sky-700" : "text-slate-600"}`}
+                        >
+                          Card
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          Save card details
+                        </span>
+                      </button>
+                    </div>
+                    {errors.paymentMethod && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.paymentMethod}
+                      </p>
+                    )}
+                  </div>
+
+                  {formData.paymentMethod === "card" && (
+                    <div className="space-y-3 mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
+                        <Lock size={14} />
+                        <span>Secure card details</span>
+                      </div>
+                      <div>
+                        <label className="form-label text-sm">
+                          Card Number
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.cardNumber}
+                          onChange={(e) => {
+                            const value = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 16);
+                            const formatted = value
+                              .replace(/(\d{4})/g, "$1 ")
+                              .trim();
+                            setFormData({ ...formData, cardNumber: formatted });
+                          }}
+                          placeholder="1234 5678 9012 3456"
+                          className="input-field"
+                        />
+                        {errors.cardNumber && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.cardNumber}
+                          </p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label text-sm">
+                            Expiry Date
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.cardExpiry}
+                            onChange={(e) => {
+                              let value = e.target.value
+                                .replace(/\D/g, "")
+                                .slice(0, 4);
+                              if (value.length > 2)
+                                value =
+                                  value.slice(0, 2) + "/" + value.slice(2);
+                              setFormData({ ...formData, cardExpiry: value });
+                            }}
+                            placeholder="MM/YY"
+                            className="input-field"
+                          />
+                          {errors.cardExpiry && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {errors.cardExpiry}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="form-label text-sm">CVV</label>
+                          <input
+                            type="text"
+                            value={formData.cardCvv}
+                            onChange={(e) => {
+                              const value = e.target.value
+                                .replace(/\D/g, "")
+                                .slice(0, 4);
+                              setFormData({ ...formData, cardCvv: value });
+                            }}
+                            placeholder="123"
+                            className="input-field"
+                          />
+                          {errors.cardCvv && (
+                            <p className="text-red-500 text-xs mt-1">
+                              {errors.cardCvv}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="form-label text-sm">
+                          Cardholder Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.cardName}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              cardName: e.target.value,
+                            })
+                          }
+                          placeholder="John Doe"
+                          className="input-field"
+                        />
+                        {errors.cardName && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.cardName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {!isUserLoggedIn && (
                     <>
                       <div className="border-t border-slate-200 pt-4 mt-4">
@@ -677,7 +879,6 @@ export default function ServiceList() {
                 </div>
               )}
 
-              {/* Step 3: Confirm */}
               {step === 3 && (
                 <div className="animate-fade-in">
                   <div className="bg-gradient-to-r from-sky-50 to-cyan-50 rounded-xl p-5 mb-4">
@@ -745,12 +946,35 @@ export default function ServiceList() {
                           {isUserLoggedIn ? user.phone : formData.phone}
                         </span>
                       </div>
+                      <div className="border-t border-slate-200 pt-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-600">Payment Method</span>
+                          <span className="font-semibold flex items-center gap-2">
+                            {formData.paymentMethod === "card" ? (
+                              <>
+                                <CreditCard
+                                  size={16}
+                                  className="text-sky-500"
+                                />
+                                Card ****{formData.cardNumber.slice(-4)}
+                              </>
+                            ) : (
+                              <>
+                                <Banknote
+                                  size={16}
+                                  className="text-emerald-500"
+                                />
+                                Cash on Pickup
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 4: Success */}
               {step === 4 && (
                 <div className="text-center py-6 animate-scale-in">
                   <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -777,7 +1001,6 @@ export default function ServiceList() {
                 </div>
               )}
 
-              {/* Navigation Buttons */}
               {step < 4 && (
                 <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200">
                   {step > 1 && (

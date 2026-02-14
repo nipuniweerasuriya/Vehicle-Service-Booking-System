@@ -6,32 +6,28 @@ import jwt from 'jsonwebtoken';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-// Get the directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables from .env file
 dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// In-memory database
 const db = {
   users: [],
   bookings: [],
   services: [],
   reviews: [],
+  notifications: [],
   bookingCounter: 0,
   reviewCounter: 0,
+  notificationCounter: 0,
 };
 
-// Initialize default data
 const initializeData = async () => {
-  // Create default admin
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash('admin123', salt);
   db.users.push({
@@ -42,9 +38,7 @@ const initializeData = async () => {
     role: 'admin',
   });
 
-  // Create default services - comprehensive list
   db.services = [
-    // Maintenance Services
     { _id: '1', name: 'Regular Maintenance', description: 'Complete vehicle check and maintenance including fluid top-ups, belt inspection, and general diagnostics', price: 99, category: 'maintenance', duration: 120, icon: 'Wrench', status: 'active', featured: true, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '2', name: 'Oil Change', description: 'Premium engine oil and filter replacement with multi-point inspection', price: 49, category: 'maintenance', duration: 45, icon: 'Droplet', status: 'active', featured: false, discount: 10, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '3', name: 'Tire Rotation & Balancing', description: 'Professional tire rotation, balancing, and pressure optimization', price: 69, category: 'maintenance', duration: 45, icon: 'Disc3', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
@@ -54,7 +48,6 @@ const initializeData = async () => {
     { _id: '7', name: 'Transmission Fluid Change', description: 'Complete transmission fluid flush and replacement for smooth gear shifting', price: 149, category: 'maintenance', duration: 90, icon: 'Wrench', status: 'active', featured: false, discount: 5, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '8', name: 'Coolant Flush', description: 'Complete cooling system flush and refill with fresh antifreeze coolant', price: 79, category: 'maintenance', duration: 60, icon: 'Droplet', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     
-    // Repair Services
     { _id: '9', name: 'Brake Inspection & Service', description: 'Complete brake system check including pads, rotors, and brake fluid', price: 79, category: 'repair', duration: 60, icon: 'Zap', status: 'active', featured: true, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '10', name: 'Brake Pad Replacement', description: 'Front or rear brake pad replacement with rotor inspection', price: 149, category: 'repair', duration: 90, icon: 'Zap', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '11', name: 'Battery Service', description: 'Battery health check, terminal cleaning, and replacement if needed', price: 89, category: 'repair', duration: 30, icon: 'Battery', status: 'active', featured: false, discount: 15, bookingCount: 0, createdAt: new Date().toISOString() },
@@ -66,7 +59,6 @@ const initializeData = async () => {
     { _id: '17', name: 'Radiator Service', description: 'Radiator inspection, cleaning, and repair for optimal cooling', price: 119, category: 'repair', duration: 90, icon: 'Droplet', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '18', name: 'Clutch Repair', description: 'Clutch inspection, adjustment, and replacement if necessary', price: 299, category: 'repair', duration: 180, icon: 'Wrench', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     
-    // Inspection Services
     { _id: '19', name: 'Full Vehicle Inspection', description: 'Comprehensive 50-point inspection covering all major systems', price: 149, category: 'inspection', duration: 120, icon: 'ClipboardCheck', status: 'active', featured: true, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '20', name: 'Engine Diagnostics', description: 'Advanced computer diagnostics to identify engine issues and error codes', price: 59, category: 'inspection', duration: 45, icon: 'Search', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '21', name: 'Pre-Purchase Inspection', description: 'Thorough inspection before buying a used vehicle to identify potential issues', price: 129, category: 'inspection', duration: 90, icon: 'ClipboardCheck', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
@@ -74,7 +66,6 @@ const initializeData = async () => {
     { _id: '23', name: 'Safety Inspection', description: 'Comprehensive safety check including lights, wipers, horn, and mirrors', price: 39, category: 'inspection', duration: 30, icon: 'Shield', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '24', name: 'Tire Inspection', description: 'Detailed tire tread depth, wear pattern, and pressure analysis', price: 25, category: 'inspection', duration: 20, icon: 'Disc3', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     
-    // Comfort Services
     { _id: '25', name: 'AC Service & Refill', description: 'Complete air conditioning system check, refrigerant refill, and cabin filter replacement', price: 129, category: 'comfort', duration: 90, icon: 'Wind', status: 'active', featured: true, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '26', name: 'Premium Detail Package', description: 'Interior deep clean, exterior wash, wax, and tire shine', price: 199, category: 'comfort', duration: 180, icon: 'Sparkles', status: 'active', featured: true, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
     { _id: '27', name: 'Interior Cleaning', description: 'Deep vacuum, dashboard polish, and upholstery cleaning', price: 79, category: 'comfort', duration: 60, icon: 'Sparkles', status: 'active', featured: false, discount: 0, bookingCount: 0, createdAt: new Date().toISOString() },
@@ -88,15 +79,12 @@ const initializeData = async () => {
   console.log('Default admin user and services created (in-memory)');
 };
 
-// JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 
-// Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
 };
 
-// Auth Middleware
 const protect = (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -116,24 +104,19 @@ const protect = (req, res, next) => {
   }
 };
 
-// ============= AUTH ROUTES =============
 
-// Register new user
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
     
-    // Check if user already exists
     const userExists = db.users.find(u => u.email === email);
     if (userExists) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
     
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    // Create user
     const user = {
       _id: String(db.users.length + 1),
       name,
@@ -159,7 +142,6 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Login
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -182,13 +164,11 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Get current user
 app.get('/api/auth/me', protect, (req, res) => {
   const { password, ...user } = req.user;
   res.json(user);
 });
 
-// Admin Login (specific endpoint)
 app.post('/api/auth/admin/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -218,7 +198,6 @@ app.post('/api/auth/admin/login', async (req, res) => {
   }
 });
 
-// Get all users (admin only)
 app.get('/api/admin/users', protect, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -231,7 +210,6 @@ app.get('/api/admin/users', protect, (req, res) => {
   }
 });
 
-// Delete user (admin only)
 app.delete('/api/admin/users/:id', protect, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -251,7 +229,6 @@ app.delete('/api/admin/users/:id', protect, (req, res) => {
   }
 });
 
-// Get admin dashboard stats
 app.get('/api/admin/dashboard', protect, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -261,7 +238,6 @@ app.get('/api/admin/dashboard', protect, (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    // Bookings stats
     const totalBookings = db.bookings.length;
     const pendingBookings = db.bookings.filter(b => b.status === 'Pending').length;
     const approvedBookings = db.bookings.filter(b => b.status === 'Approved').length;
@@ -269,29 +245,24 @@ app.get('/api/admin/dashboard', protect, (req, res) => {
     const rejectedBookings = db.bookings.filter(b => b.status === 'Rejected').length;
     const todayBookings = db.bookings.filter(b => b.createdAt?.split('T')[0] === today).length;
     
-    // This week bookings
     const thisWeekBookings = db.bookings.filter(b => {
       const bookingDate = b.createdAt?.split('T')[0];
       return bookingDate >= weekAgo && bookingDate <= today;
     }).length;
     
-    // Revenue calculation (simplified)
     const completedWithPrices = db.bookings.filter(b => b.status === 'Completed');
     const totalRevenue = completedWithPrices.reduce((sum, b) => {
       const price = parseInt(b.servicePrice?.replace(/[^0-9]/g, '') || '0');
       return sum + price;
     }, 0);
     
-    // Users stats
     const totalUsers = db.users.filter(u => u.role !== 'admin').length;
     const newUsersToday = db.users.filter(u => 
       u.role !== 'admin' && u.createdAt?.split('T')[0] === today
     ).length;
     
-    // Services stats
     const totalServices = db.services.length;
     
-    // Popular services
     const serviceCounts = {};
     db.bookings.forEach(b => {
       serviceCounts[b.serviceType] = (serviceCounts[b.serviceType] || 0) + 1;
@@ -301,7 +272,6 @@ app.get('/api/admin/dashboard', protect, (req, res) => {
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
     
-    // Recent activity
     const recentBookings = [...db.bookings]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 10);
@@ -335,12 +305,10 @@ app.get('/api/admin/dashboard', protect, (req, res) => {
   }
 });
 
-// ============= BOOKING ROUTES =============
 
-// Create booking
 app.post('/api/bookings', (req, res) => {
   try {
-    const { customerName, phone, vehicleNumber, serviceType, date, time, userId } = req.body;
+    const { customerName, phone, vehicleNumber, serviceType, date, time, userId, paymentMethod, paymentStatus, cardLast4, servicePrice } = req.body;
     
     db.bookingCounter++;
     const booking = {
@@ -350,12 +318,16 @@ app.post('/api/bookings', (req, res) => {
       phone,
       vehicleNumber,
       serviceType,
+      servicePrice: servicePrice || null,
       date,
       time,
       userId: userId || null,
       status: 'Pending',
       progress: 0,
       progressStage: 'Waiting',
+      paymentMethod: paymentMethod || 'cash',
+      paymentStatus: paymentStatus || 'pending',
+      cardLast4: cardLast4 || null,
       createdAt: new Date().toISOString(),
     };
     
@@ -366,7 +338,6 @@ app.post('/api/bookings', (req, res) => {
   }
 });
 
-// Get user's bookings
 app.get('/api/bookings/my', protect, (req, res) => {
   try {
     const userBookings = db.bookings.filter(b => 
@@ -379,7 +350,6 @@ app.get('/api/bookings/my', protect, (req, res) => {
   }
 });
 
-// Get all bookings
 app.get('/api/bookings', (req, res) => {
   try {
     const { status, date } = req.query;
@@ -388,7 +358,6 @@ app.get('/api/bookings', (req, res) => {
     if (status) bookings = bookings.filter(b => b.status === status);
     if (date) bookings = bookings.filter(b => b.date === date);
     
-    // Sort by createdAt descending
     bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(bookings);
   } catch (error) {
@@ -396,7 +365,6 @@ app.get('/api/bookings', (req, res) => {
   }
 });
 
-// Get booking stats
 app.get('/api/bookings/stats', (req, res) => {
   try {
     const total = db.bookings.length;
@@ -414,7 +382,6 @@ app.get('/api/bookings/stats', (req, res) => {
   }
 });
 
-// Get single booking
 app.get('/api/bookings/:id', (req, res) => {
   try {
     const booking = db.bookings.find(b => 
@@ -431,7 +398,6 @@ app.get('/api/bookings/:id', (req, res) => {
   }
 });
 
-// Update booking status
 app.put('/api/bookings/:id/status', protect, (req, res) => {
   try {
     const { status } = req.body;
@@ -440,16 +406,30 @@ app.put('/api/bookings/:id/status', protect, (req, res) => {
     );
     
     if (bookingIndex !== -1) {
-      db.bookings[bookingIndex].status = status;
-      // Reset progress when status changes
+      const booking = db.bookings[bookingIndex];
+      booking.status = status;
       if (status === 'Approved') {
-        db.bookings[bookingIndex].progress = 0;
-        db.bookings[bookingIndex].progressStage = 'Waiting';
+        booking.progress = 0;
+        booking.progressStage = 'Waiting';
       } else if (status === 'Completed') {
-        db.bookings[bookingIndex].progress = 100;
-        db.bookings[bookingIndex].progressStage = 'Completed';
+        booking.progress = 100;
+        booking.progressStage = 'Completed';
+        
+        if (booking.userId) {
+          db.notificationCounter++;
+          db.notifications.push({
+            _id: String(db.notificationCounter),
+            userId: booking.userId,
+            type: 'payment_required',
+            title: 'Service Completed - Payment Required',
+            message: `Your ${booking.serviceType} service is complete. Please make the payment of ${booking.servicePrice || 'the service fee'}.`,
+            bookingId: booking.bookingId,
+            read: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
       }
-      res.json(db.bookings[bookingIndex]);
+      res.json(booking);
     } else {
       res.status(404).json({ message: 'Booking not found' });
     }
@@ -458,7 +438,6 @@ app.put('/api/bookings/:id/status', protect, (req, res) => {
   }
 });
 
-// Update booking progress (admin only)
 app.put('/api/bookings/:id/progress', protect, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -481,7 +460,6 @@ app.put('/api/bookings/:id/progress', protect, (req, res) => {
   }
 });
 
-// Delete booking
 app.delete('/api/bookings/:id', protect, (req, res) => {
   try {
     const bookingIndex = db.bookings.findIndex(b => 
@@ -499,9 +477,7 @@ app.delete('/api/bookings/:id', protect, (req, res) => {
   }
 });
 
-// ============= SERVICE ROUTES =============
 
-// Get all services
 app.get('/api/services', (req, res) => {
   const { status, category, featured } = req.query;
   let services = [...db.services];
@@ -519,13 +495,11 @@ app.get('/api/services', (req, res) => {
   res.json(services);
 });
 
-// Get service statistics
 app.get('/api/services/stats', protect, (req, res) => {
   try {
     const services = db.services;
     const bookings = db.bookings;
     
-    // Calculate service booking counts
     const serviceBookingCounts = {};
     const serviceRevenue = {};
     
@@ -541,7 +515,6 @@ app.get('/api/services/stats', protect, (req, res) => {
       }
     });
     
-    // Category breakdown
     const categoryStats = {};
     services.forEach(s => {
       if (!categoryStats[s.category]) {
@@ -552,7 +525,6 @@ app.get('/api/services/stats', protect, (req, res) => {
       categoryStats[s.category].revenue += serviceRevenue[s._id] || 0;
     });
     
-    // Top services
     const topServices = services
       .map(s => ({
         ...s,
@@ -578,7 +550,6 @@ app.get('/api/services/stats', protect, (req, res) => {
   }
 });
 
-// Create service
 app.post('/api/services', protect, (req, res) => {
   try {
     const { name, description, price, icon, category, duration, status, featured, discount } = req.body;
@@ -610,7 +581,6 @@ app.post('/api/services', protect, (req, res) => {
   }
 });
 
-// Update service
 app.put('/api/services/:id', protect, (req, res) => {
   try {
     const { name, description, price, icon, category, duration, status, featured, discount } = req.body;
@@ -637,7 +607,6 @@ app.put('/api/services/:id', protect, (req, res) => {
   }
 });
 
-// Toggle service status
 app.patch('/api/services/:id/toggle-status', protect, (req, res) => {
   try {
     const serviceIndex = db.services.findIndex(s => s._id === req.params.id);
@@ -654,7 +623,6 @@ app.patch('/api/services/:id/toggle-status', protect, (req, res) => {
   }
 });
 
-// Toggle service featured
 app.patch('/api/services/:id/toggle-featured', protect, (req, res) => {
   try {
     const serviceIndex = db.services.findIndex(s => s._id === req.params.id);
@@ -671,7 +639,6 @@ app.patch('/api/services/:id/toggle-featured', protect, (req, res) => {
   }
 });
 
-// Bulk update services status
 app.post('/api/services/bulk-status', protect, (req, res) => {
   try {
     const { serviceIds, status } = req.body;
@@ -692,7 +659,6 @@ app.post('/api/services/bulk-status', protect, (req, res) => {
   }
 });
 
-// Bulk delete services
 app.post('/api/services/bulk-delete', protect, (req, res) => {
   try {
     const { serviceIds } = req.body;
@@ -712,7 +678,6 @@ app.post('/api/services/bulk-delete', protect, (req, res) => {
   }
 });
 
-// Delete service
 app.delete('/api/services/:id', protect, (req, res) => {
   try {
     const serviceIndex = db.services.findIndex(s => s._id === req.params.id);
@@ -728,19 +693,15 @@ app.delete('/api/services/:id', protect, (req, res) => {
   }
 });
 
-// ============= REVIEW ROUTES =============
 
-// Get all reviews (public - for display)
 app.get('/api/reviews', (req, res) => {
   try {
     const { status } = req.query;
     let reviews = [...db.reviews];
     
-    // Filter by status (approved only for public, all for admin)
     if (status) {
       reviews = reviews.filter(r => r.status === status);
     } else {
-      // Default: show only approved reviews for public
       reviews = reviews.filter(r => r.status === 'approved');
     }
     
@@ -751,7 +712,6 @@ app.get('/api/reviews', (req, res) => {
   }
 });
 
-// Get all reviews (admin - includes pending)
 app.get('/api/admin/reviews', protect, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -764,7 +724,6 @@ app.get('/api/admin/reviews', protect, (req, res) => {
   }
 });
 
-// Create review (user)
 app.post('/api/reviews', protect, (req, res) => {
   try {
     const { rating, comment, serviceType, bookingId } = req.body;
@@ -779,7 +738,7 @@ app.post('/api/reviews', protect, (req, res) => {
       comment,
       serviceType: serviceType || 'General',
       bookingId: bookingId || null,
-      status: 'pending', // pending, approved, rejected
+      status: 'pending',
       createdAt: new Date().toISOString(),
     };
     
@@ -790,7 +749,6 @@ app.post('/api/reviews', protect, (req, res) => {
   }
 });
 
-// Update review status (admin only)
 app.put('/api/admin/reviews/:id/status', protect, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -810,7 +768,6 @@ app.put('/api/admin/reviews/:id/status', protect, (req, res) => {
   }
 });
 
-// Delete review (admin only)
 app.delete('/api/admin/reviews/:id', protect, (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -829,14 +786,84 @@ app.delete('/api/admin/reviews/:id', protect, (req, res) => {
   }
 });
 
-// Health check
+app.get('/api/notifications', protect, (req, res) => {
+  try {
+    const userNotifications = db.notifications.filter(n => n.userId === req.user._id);
+    userNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(userNotifications);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/notifications/admin', protect, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    const adminNotifications = db.notifications.filter(n => n.type === 'payment_received');
+    adminNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(adminNotifications);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.put('/api/notifications/:id/read', protect, (req, res) => {
+  try {
+    const notifIndex = db.notifications.findIndex(n => n._id === req.params.id);
+    if (notifIndex !== -1) {
+      db.notifications[notifIndex].read = true;
+      res.json(db.notifications[notifIndex]);
+    } else {
+      res.status(404).json({ message: 'Notification not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.put('/api/bookings/:id/payment', protect, (req, res) => {
+  try {
+    const { paymentStatus } = req.body;
+    const bookingIndex = db.bookings.findIndex(b => 
+      b._id === req.params.id || b.bookingId === req.params.id
+    );
+    
+    if (bookingIndex !== -1) {
+      const booking = db.bookings[bookingIndex];
+      booking.paymentStatus = paymentStatus;
+      booking.paidAt = new Date().toISOString();
+      
+      if (paymentStatus === 'paid') {
+        db.notificationCounter++;
+        db.notifications.push({
+          _id: String(db.notificationCounter),
+          userId: 'admin',
+          type: 'payment_received',
+          title: 'Payment Received',
+          message: `Payment of ${booking.servicePrice || 'service fee'} received for booking ${booking.bookingId} (${booking.customerName}) via ${booking.paymentMethod}.`,
+          bookingId: booking.bookingId,
+          read: false,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      
+      res.json(booking);
+    } else {
+      res.status(404).json({ message: 'Booking not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running (in-memory mode)' });
 });
 
 const PORT = process.env.PORT || 5001;
 
-// Initialize data and start server
 initializeData().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT} (in-memory database mode)`);

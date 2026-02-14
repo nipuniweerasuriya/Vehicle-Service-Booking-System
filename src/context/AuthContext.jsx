@@ -16,13 +16,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Check for admin token
     const adminToken = localStorage.getItem("adminToken");
     if (adminToken) {
       setIsAdminLoggedIn(true);
     }
 
-    // Check for user data
     const userData = localStorage.getItem("user");
     if (userData) {
       try {

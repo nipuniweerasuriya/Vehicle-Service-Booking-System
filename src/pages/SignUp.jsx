@@ -47,7 +47,6 @@ export default function SignUp() {
     setMounted(true);
   }, []);
 
-  // Calculate form progress
   const formProgress = useMemo(() => {
     let completed = 0;
     if (formData.name.trim()) completed++;
@@ -135,7 +134,6 @@ export default function SignUp() {
     }
   };
 
-  // Password strength indicator
   const getPasswordStrength = () => {
     const password = formData.password;
     if (!password) return { width: "0%", color: "bg-slate-200", label: "" };
@@ -161,7 +159,7 @@ export default function SignUp() {
       <Header />
 
       <main className="min-h-screen py-12 px-4 bg-gradient-mesh relative overflow-hidden">
-        {/* Decorative elements */}
+        
         <div className="absolute top-20 right-10 w-72 h-72 bg-emerald-400/20 rounded-full blur-3xl animate-float pointer-events-none" />
         <div
           className="absolute bottom-20 left-10 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl animate-float pointer-events-none"
@@ -171,7 +169,7 @@ export default function SignUp() {
 
         <div className="max-w-5xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 items-start">
-            {/* Left Side - Benefits */}
+            
             <div
               className={`hidden lg:block sticky top-24 transition-all duration-700 ${mounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"}`}
             >
@@ -188,7 +186,7 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                {/* Progress Indicator */}
+                
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-emerald-200 text-sm">
@@ -256,11 +254,11 @@ export default function SignUp() {
               </div>
             </div>
 
-            {/* Right Side - Form */}
+            
             <div
               className={`transition-all duration-700 ${mounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}
             >
-              {/* Mobile Header */}
+              
               <div className="text-center mb-8 lg:hidden">
                 <div className="relative inline-block mb-6">
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur-xl opacity-50 animate-pulse-glow pointer-events-none" />
@@ -278,7 +276,7 @@ export default function SignUp() {
                 </p>
               </div>
 
-              {/* Form Card */}
+              
               <div className="glass-card p-8 relative z-20">
                 <div className="hidden lg:block mb-6">
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">
@@ -290,7 +288,7 @@ export default function SignUp() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* General Error Message */}
+                  
                   {errors.general && (
                     <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-xl p-4 flex items-center gap-3 animate-scale-in">
                       <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -302,7 +300,7 @@ export default function SignUp() {
                     </div>
                   )}
 
-                  {/* Name */}
+                  
                   <div className="space-y-2">
                     <label className="form-label flex items-center gap-2">
                       <User size={14} className="text-emerald-500" />
@@ -333,7 +331,7 @@ export default function SignUp() {
                     )}
                   </div>
 
-                  {/* Email */}
+                  
                   <div className="space-y-2">
                     <label className="form-label flex items-center gap-2">
                       <Mail size={14} className="text-emerald-500" />
@@ -364,7 +362,7 @@ export default function SignUp() {
                     )}
                   </div>
 
-                  {/* Phone */}
+                  
                   <div className="space-y-2">
                     <label className="form-label flex items-center gap-2">
                       <Phone size={14} className="text-emerald-500" />
@@ -395,7 +393,7 @@ export default function SignUp() {
                     )}
                   </div>
 
-                  {/* Password */}
+                  
                   <div className="space-y-2">
                     <label className="form-label flex items-center gap-2">
                       <Lock size={14} className="text-emerald-500" />
@@ -429,7 +427,7 @@ export default function SignUp() {
                         )}
                       </button>
                     </div>
-                    {/* Password strength indicator */}
+                    
                     {formData.password && (
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -453,7 +451,7 @@ export default function SignUp() {
                     )}
                   </div>
 
-                  {/* Confirm Password */}
+                  
                   <div className="space-y-2">
                     <label className="form-label flex items-center gap-2">
                       <Lock size={14} className="text-emerald-500" />
@@ -493,7 +491,7 @@ export default function SignUp() {
                     )}
                   </div>
 
-                  {/* Submit Button */}
+                  
                   <button
                     type="submit"
                     disabled={loading}
@@ -517,7 +515,7 @@ export default function SignUp() {
                   </button>
                 </form>
 
-                {/* Divider */}
+                
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-slate-200/70"></div>
@@ -529,7 +527,7 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                {/* Social Login */}
+                
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <button
                     type="button"
@@ -557,7 +555,7 @@ export default function SignUp() {
                   </button>
                 </div>
 
-                {/* Sign In Link */}
+                
                 <p className="text-center text-slate-600">
                   Already have an account?{" "}
                   <Link
@@ -569,7 +567,7 @@ export default function SignUp() {
                 </p>
               </div>
 
-              {/* Trust badges */}
+              
               <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-slate-500">
                 <div className="flex items-center gap-2">
                   <Shield size={16} className="text-emerald-500" />

@@ -1,4 +1,5 @@
 import Booking from '../models/Booking.js';
+import Service from '../models/Service.js';
 
 // @desc    Create new booking
 // @route   POST /api/bookings
@@ -7,6 +8,12 @@ export const createBooking = async (req, res) => {
   try {
     const { customerName, phone, vehicleNumber, serviceType, date, time } = req.body;
 
+    // Find the service to get its price
+    const service = await Service.findOne({ name: serviceType });
+    if (!service) {
+      return res.status(400).json({ message: 'Selected service not found' });
+    }
+
     const booking = await Booking.create({
       customerName,
       phone,
@@ -14,6 +21,7 @@ export const createBooking = async (req, res) => {
       serviceType,
       date,
       time,
+      servicePrice: service.price,
     });
 
     res.status(201).json(booking);

@@ -39,11 +39,13 @@ import {
   Package,
   FileText,
   Phone,
+  CreditCard,
+  Banknote,
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { AuthContext } from "../context/AuthContext";
-import { bookingsAPI, reviewsAPI } from "../api";
+import { bookingsAPI, reviewsAPI, servicesAPI } from "../api";
 
 export default function MyBookings() {
   const { user, isUserLoggedIn } = useContext(AuthContext);
@@ -54,22 +56,41 @@ export default function MyBookings() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeSection, setActiveSection] = useState("bookings"); // 'bookings' or 'insights'
+  const [activeSection, setActiveSection] = useState("bookings");
 
-  // Booking details modal
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [servicesMap, setServicesMap] = useState({});
 
-  // Review states
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewBooking, setReviewBooking] = useState(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentBooking, setPaymentBooking] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentDone, setPaymentDone] = useState(false);
 
   useEffect(() => {
     fetchBookings();
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    // fetch services once to fallback price when booking.servicePrice missing
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await servicesAPI.getAll();
+        if (!mounted) return;
+        const map = {};
+        (res.data || []).forEach((s) => {
+          if (s && s.name) map[s.name] = s.price;
+        });
+        setServicesMap(map);
+      } catch (err) {
+        // ignore
+      }
+    })();
     return () => clearInterval(timer);
   }, []);
 
@@ -119,22 +140,74 @@ export default function MyBookings() {
     }
   };
 
+  const handleOpenPayment = (booking) => {
+    setPaymentBooking(booking);
+    const raw = booking.servicePrice ?? servicesMap[booking.serviceType];
+    const val = Number(raw ?? 0);
+    setPaymentAmount(val);
+    setPaymentDone(false);
+    setShowPaymentModal(true);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!paymentBooking) return;
+
+    setPaymentLoading(paymentBooking._id);
+    try {
+      await bookingsAPI.updatePayment(paymentBooking._id, "paid");
+      // mark booking as awaiting admin review
+      try {
+        await bookingsAPI.updateStatus(paymentBooking._id, "Pending");
+      } catch (e) {
+        // ignore status update failure
+      }
+      setBookings(
+        bookings.map((b) =>
+          b._id === paymentBooking._id
+            ? {
+                ...b,
+                paymentStatus: "paid",
+                paidAt: new Date().toISOString(),
+                status: "Pending",
+              }
+            : b,
+        ),
+      );
+      // mark as done and update selected booking so details show paid
+      setPaymentDone(true);
+      setSelectedBooking((prev) =>
+        prev && prev._id === paymentBooking._id
+          ? { ...prev, paymentStatus: "paid", paidAt: new Date().toISOString() }
+          : prev,
+      );
+      // keep modal briefly to show confirmation then close
+      setTimeout(() => {
+        setShowPaymentModal(false);
+        setPaymentBooking(null);
+        setPaymentDone(false);
+      }, 1400);
+    } catch (err) {
+      console.error("Failed to process payment");
+    } finally {
+      setPaymentLoading(null);
+    }
+  };
+
   if (!isUserLoggedIn) {
     return <Navigate to="/signin" replace />;
   }
 
-  // Smart greeting
   const getGreeting = () => {
     const hour = currentTime.getHours();
-    if (hour < 12) return { text: "Good Morning", icon: "☀️" };
-    if (hour < 17) return { text: "Good Afternoon", icon: "🌤️" };
-    if (hour < 21) return { text: "Good Evening", icon: "🌅" };
-    return { text: "Good Night", icon: "🌙" };
+    if (hour < 12) return { text: "Good Morning" };
+    if (hour < 17) return { text: "Good Afternoon" };
+    if (hour < 21) return { text: "Good Evening" };
+    return { text: "Good Night" };
   };
 
   const greeting = getGreeting();
 
-  const getStatusConfig = (status) => {
+  const getStatusConfig = (status, paymentStatus) => {
     const configs = {
       Pending: {
         bg: "bg-amber-50",
@@ -144,6 +217,15 @@ export default function MyBookings() {
         dot: "bg-amber-500",
         gradient: "from-amber-500 to-orange-500",
         label: "Pending Review",
+      },
+      PendingPaid: {
+        bg: "bg-sky-50",
+        text: "text-sky-600",
+        border: "border-sky-200",
+        icon: Activity,
+        dot: "bg-sky-500",
+        gradient: "from-sky-500 to-indigo-500",
+        label: "Awaiting Admin Review",
       },
       Approved: {
         bg: "bg-blue-50",
@@ -173,6 +255,8 @@ export default function MyBookings() {
         label: "Rejected",
       },
     };
+    if (status === "Pending" && paymentStatus === "paid")
+      return configs.PendingPaid;
     return configs[status] || configs.Pending;
   };
 
@@ -224,7 +308,6 @@ export default function MyBookings() {
     [bookings],
   );
 
-  // Get upcoming booking (next pending or approved)
   const upcomingBooking = useMemo(() => {
     const activeBookings = bookings.filter(
       (b) => b.status === "Pending" || b.status === "Approved",
@@ -234,7 +317,6 @@ export default function MyBookings() {
     )[0];
   }, [bookings]);
 
-  // Smart tip based on bookings
   const smartTip = useMemo(() => {
     if (stats.pending > 0)
       return {
@@ -254,7 +336,6 @@ export default function MyBookings() {
     return { text: "Book your first service to get started!", color: "slate" };
   }, [stats]);
 
-  // Service insights
   const serviceInsights = useMemo(() => {
     const serviceCount = {};
     bookings.forEach((b) => {
@@ -274,7 +355,6 @@ export default function MyBookings() {
     };
   }, [bookings, stats]);
 
-  // Recent activity (last 5)
   const recentActivity = useMemo(() => {
     return [...bookings]
       .sort(
@@ -324,7 +404,6 @@ export default function MyBookings() {
     },
   ];
 
-  // Quick tips
   const quickTips = [
     {
       icon: Shield,
@@ -354,10 +433,8 @@ export default function MyBookings() {
 
       <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
         <div className="flex">
-          {/* Enhanced Sidebar */}
           <aside className="hidden lg:block w-72 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 min-h-screen flex-shrink-0">
             <div className="p-5 sticky top-0">
-              {/* User Card */}
               <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl p-4 mb-5 border border-slate-700/50">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/25">
@@ -373,7 +450,6 @@ export default function MyBookings() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-500">{greeting.icon}</span>
                   <span className="text-slate-300">{greeting.text}</span>
                   <span className="flex items-center gap-1 ml-auto px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full">
                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
@@ -382,7 +458,6 @@ export default function MyBookings() {
                 </div>
               </div>
 
-              {/* Quick Stats */}
               <div className="grid grid-cols-2 gap-2 mb-5">
                 <div className="bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
                   <div className="flex items-center gap-2 mb-1">
@@ -406,7 +481,6 @@ export default function MyBookings() {
                 </div>
               </div>
 
-              {/* Smart Alert */}
               {stats.pending > 0 && (
                 <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-xl p-3 mb-5 border border-amber-500/30">
                   <div className="flex items-center gap-2">
@@ -418,7 +492,6 @@ export default function MyBookings() {
                 </div>
               )}
 
-              {/* Main Navigation */}
               <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">
                 Dashboard
               </p>
@@ -454,7 +527,6 @@ export default function MyBookings() {
                 })}
               </nav>
 
-              {/* Filter by Status - only show in bookings section */}
               {activeSection === "bookings" && (
                 <>
                   <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">
@@ -494,7 +566,6 @@ export default function MyBookings() {
                 </>
               )}
 
-              {/* Upcoming Booking */}
               {upcomingBooking && activeSection === "bookings" && (
                 <div className="mb-5">
                   <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">
@@ -523,15 +594,25 @@ export default function MyBookings() {
                         {upcomingBooking.time}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 mt-2 text-blue-400 text-xs group-hover:gap-2 transition-all">
-                      <span>View Details</span>
-                      <ArrowRight size={12} />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-emerald-400 font-semibold text-sm">
+                        {(() => {
+                          const raw =
+                            upcomingBooking.servicePrice ??
+                            servicesMap[upcomingBooking.serviceType];
+                          const v = Number(raw ?? 0);
+                          return v > 0 ? `$${v.toFixed(2)}` : "$0.00";
+                        })()}
+                      </span>
+                      <div className="flex items-center gap-1 text-blue-400 text-xs group-hover:gap-2 transition-all">
+                        <span>View Details</span>
+                        <ArrowRight size={12} />
+                      </div>
                     </div>
                   </button>
                 </div>
               )}
 
-              {/* Quick Actions */}
               <div className="space-y-2">
                 <Link
                   to="/services"
@@ -551,9 +632,7 @@ export default function MyBookings() {
             </div>
           </aside>
 
-          {/* Main Content */}
           <div className="flex-1 p-4 sm:p-6 lg:p-8">
-            {/* Mobile Header */}
             <div className="lg:hidden mb-5">
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
@@ -562,9 +641,7 @@ export default function MyBookings() {
                       {user?.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
                     <div>
-                      <p className="text-xs text-slate-500">
-                        {greeting.icon} {greeting.text}
-                      </p>
+                      <p className="text-xs text-slate-500">{greeting.text}</p>
                       <h3 className="font-semibold text-slate-900">
                         {user?.name}
                       </h3>
@@ -578,35 +655,41 @@ export default function MyBookings() {
                   </Link>
                 </div>
 
-                {/* Mobile Stats */}
                 <div className="grid grid-cols-4 gap-2 mb-4">
                   <div className="bg-slate-50 rounded-lg p-2 text-center">
                     <p className="text-lg font-bold text-slate-900">
                       {stats.total}
                     </p>
-                    <p className="text-[10px] text-slate-500">Total</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                      Total
+                    </p>
                   </div>
                   <div className="bg-amber-50 rounded-lg p-2 text-center">
                     <p className="text-lg font-bold text-amber-600">
                       {stats.pending}
                     </p>
-                    <p className="text-[10px] text-slate-500">Pending</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                      Pending
+                    </p>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-2 text-center">
                     <p className="text-lg font-bold text-blue-600">
                       {stats.inProgress}
                     </p>
-                    <p className="text-[10px] text-slate-500">Active</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                      Active
+                    </p>
                   </div>
                   <div className="bg-emerald-50 rounded-lg p-2 text-center">
                     <p className="text-lg font-bold text-emerald-600">
                       {stats.completed}
                     </p>
-                    <p className="text-[10px] text-slate-500">Done</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                      Done
+                    </p>
                   </div>
                 </div>
 
-                {/* Mobile Navigation Tabs */}
                 <div className="flex gap-2">
                   {sidebarNavItems.map((item) => {
                     const Icon = item.icon;
@@ -632,12 +715,10 @@ export default function MyBookings() {
               </div>
             </div>
 
-            {/* Desktop Header */}
             <div className="hidden lg:block mb-6">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-2xl">{greeting.icon}</span>
                     <h1 className="text-2xl font-bold text-slate-900">
                       {greeting.text}, {user?.name?.split(" ")[0]}!
                     </h1>
@@ -658,7 +739,6 @@ export default function MyBookings() {
               </div>
             </div>
 
-            {/* Desktop Stats Cards */}
             <div className="hidden lg:grid grid-cols-4 gap-4 mb-6">
               {[
                 {
@@ -708,10 +788,8 @@ export default function MyBookings() {
               })}
             </div>
 
-            {/* BOOKINGS SECTION */}
             {activeSection === "bookings" && (
               <>
-                {/* Mobile Filter Tabs */}
                 <div className="lg:hidden flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
                   {filterItems.map((item) => {
                     const Icon = item.icon;
@@ -740,7 +818,6 @@ export default function MyBookings() {
                   })}
                 </div>
 
-                {/* Section Title */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold text-slate-900">
@@ -756,7 +833,6 @@ export default function MyBookings() {
                   </div>
                 </div>
 
-                {/* Search */}
                 <div className="relative mb-5">
                   <Search
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -779,7 +855,6 @@ export default function MyBookings() {
                   )}
                 </div>
 
-                {/* Bookings List */}
                 {loading ? (
                   <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
                     <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
@@ -804,7 +879,10 @@ export default function MyBookings() {
                 ) : filteredBookings.length > 0 ? (
                   <div className="space-y-3">
                     {filteredBookings.map((booking, index) => {
-                      const config = getStatusConfig(booking.status);
+                      const config = getStatusConfig(
+                        booking.status,
+                        booking.paymentStatus,
+                      );
 
                       return (
                         <div
@@ -813,21 +891,18 @@ export default function MyBookings() {
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
                           <div className="flex">
-                            {/* Status Indicator */}
                             <div
                               className={`w-1.5 bg-gradient-to-b ${config.gradient}`}
                             />
 
                             <div className="flex-1 p-4 sm:p-5">
                               <div className="flex items-start gap-4">
-                                {/* Service Icon */}
                                 <div
                                   className={`w-12 h-12 bg-gradient-to-br ${config.gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}
                                 >
                                   <Wrench size={20} className="text-white" />
                                 </div>
 
-                                {/* Info */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex flex-wrap items-center gap-2 mb-1">
                                     <span
@@ -866,12 +941,25 @@ export default function MyBookings() {
                                       />
                                       {booking.time}
                                     </span>
+                                    <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
+                                      <Banknote
+                                        size={14}
+                                        className="text-emerald-500"
+                                      />
+                                      {(() => {
+                                        const raw =
+                                          booking.servicePrice ??
+                                          servicesMap[booking.serviceType];
+                                        const val = Number(raw ?? 0);
+                                        return val > 0
+                                          ? `$${val.toFixed(2)}`
+                                          : "$0.00";
+                                      })()}
+                                    </span>
                                   </div>
                                 </div>
 
-                                {/* Right Section */}
                                 <div className="flex flex-col items-end gap-3 flex-shrink-0">
-                                  {/* Progress Bar for In Progress */}
                                   {booking.status === "Approved" &&
                                     booking.progress !== undefined && (
                                       <div className="hidden sm:block w-28">
@@ -894,7 +982,6 @@ export default function MyBookings() {
                                       </div>
                                     )}
 
-                                  {/* Action Buttons */}
                                   <div className="flex items-center gap-2">
                                     <button
                                       onClick={() =>
@@ -912,24 +999,57 @@ export default function MyBookings() {
                                       />
                                     </button>
                                     {booking.status === "Completed" && (
-                                      <button
-                                        onClick={() =>
-                                          handleOpenReview(booking)
-                                        }
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl transition-all text-sm font-medium"
-                                        title="Write Review"
-                                      >
-                                        <Star size={14} />
-                                        <span className="hidden sm:inline">
-                                          Review
-                                        </span>
-                                      </button>
+                                      <>
+                                        <button
+                                          onClick={() =>
+                                            handleOpenReview(booking)
+                                          }
+                                          className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white rounded-xl transition-all text-sm font-medium"
+                                          title="Write Review"
+                                        >
+                                          <Star size={14} />
+                                          <span className="hidden sm:inline">
+                                            Review
+                                          </span>
+                                        </button>
+                                        {booking.paymentStatus !== "paid" && (
+                                          <button
+                                            onClick={() =>
+                                              handleOpenPayment(booking)
+                                            }
+                                            disabled={
+                                              paymentLoading === booking._id
+                                            }
+                                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl transition-all text-sm font-medium"
+                                            title="Pay Now"
+                                          >
+                                            {paymentLoading === booking._id ? (
+                                              <RefreshCw
+                                                size={14}
+                                                className="animate-spin"
+                                              />
+                                            ) : (
+                                              <CreditCard size={14} />
+                                            )}
+                                            <span className="hidden sm:inline">
+                                              Pay
+                                            </span>
+                                          </button>
+                                        )}
+                                        {booking.paymentStatus === "paid" && (
+                                          <span className="flex items-center gap-1.5 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">
+                                            <Check size={14} />
+                                            <span className="hidden sm:inline">
+                                              Paid
+                                            </span>
+                                          </span>
+                                        )}
+                                      </>
                                     )}
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Mobile Progress */}
                               {booking.status === "Approved" &&
                                 booking.progress !== undefined && (
                                   <div className="sm:hidden mt-4 pt-4 border-t border-slate-100">
@@ -996,10 +1116,8 @@ export default function MyBookings() {
               </>
             )}
 
-            {/* INSIGHTS SECTION */}
             {activeSection === "insights" && (
               <div className="space-y-6">
-                {/* Insights Header */}
                 <div className="text-center mb-8">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold mb-4">
                     <BarChart3 size={16} />
@@ -1014,7 +1132,6 @@ export default function MyBookings() {
                   </p>
                 </div>
 
-                {/* Key Metrics */}
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white">
                     <div className="flex items-center justify-between mb-3">
@@ -1073,7 +1190,6 @@ export default function MyBookings() {
                   </div>
                 </div>
 
-                {/* Status Breakdown */}
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                   <h3 className="font-bold text-slate-900 mb-5 flex items-center gap-2">
                     <PieChart size={18} className="text-blue-500" />
@@ -1146,7 +1262,6 @@ export default function MyBookings() {
                   )}
                 </div>
 
-                {/* Recent Activity */}
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                   <h3 className="font-bold text-slate-900 mb-5 flex items-center gap-2">
                     <Activity size={18} className="text-blue-500" />
@@ -1155,7 +1270,10 @@ export default function MyBookings() {
                   {recentActivity.length > 0 ? (
                     <div className="space-y-3">
                       {recentActivity.map((booking, idx) => {
-                        const config = getStatusConfig(booking.status);
+                        const config = getStatusConfig(
+                          booking.status,
+                          booking.paymentStatus,
+                        );
                         return (
                           <div
                             key={booking._id}
@@ -1176,11 +1294,22 @@ export default function MyBookings() {
                                 {booking.vehicleNumber}
                               </p>
                             </div>
-                            <span
-                              className={`${config.bg} ${config.text} px-2 py-1 rounded-lg text-xs font-semibold`}
-                            >
-                              {booking.status}
-                            </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-sm font-semibold text-emerald-600">
+                                {(() => {
+                                  const raw =
+                                    booking.servicePrice ??
+                                    servicesMap[booking.serviceType];
+                                  const v = Number(raw ?? 0);
+                                  return v > 0 ? `$${v.toFixed(2)}` : "$0.00";
+                                })()}
+                              </span>
+                              <span
+                                className={`${config.bg} ${config.text} px-2 py-1 rounded-lg text-xs font-semibold`}
+                              >
+                                {booking.status}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
@@ -1192,7 +1321,6 @@ export default function MyBookings() {
                   )}
                 </div>
 
-                {/* Quick Tips */}
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                   <h3 className="font-bold text-slate-900 mb-5 flex items-center gap-2">
                     <Lightbulb size={18} className="text-amber-500" />
@@ -1223,7 +1351,6 @@ export default function MyBookings() {
                   </div>
                 </div>
 
-                {/* Call to Action */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white text-center">
                   <h3 className="text-xl font-bold mb-2">
                     Ready for your next service?
@@ -1245,7 +1372,6 @@ export default function MyBookings() {
         </div>
       </main>
 
-      {/* Booking Details Modal */}
       {selectedBooking && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
@@ -1255,7 +1381,6 @@ export default function MyBookings() {
             className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slideUp"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
@@ -1266,13 +1391,21 @@ export default function MyBookings() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span
-                    className={`px-3 py-1.5 rounded-lg ${getStatusConfig(selectedBooking.status).bg} ${getStatusConfig(selectedBooking.status).text} font-bold text-sm flex items-center gap-1.5`}
+                    className={`px-3 py-1.5 rounded-lg ${getStatusConfig(selectedBooking.status, selectedBooking.paymentStatus).bg} ${getStatusConfig(selectedBooking.status, selectedBooking.paymentStatus).text} font-bold text-sm flex items-center gap-1.5`}
                   >
                     {(() => {
-                      const Icon = getStatusConfig(selectedBooking.status).icon;
+                      const Icon = getStatusConfig(
+                        selectedBooking.status,
+                        selectedBooking.paymentStatus,
+                      ).icon;
                       return <Icon size={16} />;
                     })()}
-                    {getStatusConfig(selectedBooking.status).label}
+                    {
+                      getStatusConfig(
+                        selectedBooking.status,
+                        selectedBooking.paymentStatus,
+                      ).label
+                    }
                   </span>
                   <button
                     onClick={() => setSelectedBooking(null)}
@@ -1284,9 +1417,7 @@ export default function MyBookings() {
               </div>
             </div>
 
-            {/* Modal Content */}
             <div className="p-6 space-y-5">
-              {/* Progress */}
               {selectedBooking.status === "Approved" &&
                 selectedBooking.progress !== undefined && (
                   <div className="bg-slate-50 rounded-xl p-4">
@@ -1315,7 +1446,6 @@ export default function MyBookings() {
                   </div>
                 )}
 
-              {/* Details Grid */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="bg-slate-50 rounded-xl p-4">
                   <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
@@ -1326,7 +1456,13 @@ export default function MyBookings() {
                     {selectedBooking.serviceType}
                   </p>
                   <p className="text-blue-600 font-bold mt-1">
-                    {selectedBooking.servicePrice || "$0"}
+                    {(() => {
+                      const raw =
+                        selectedBooking.servicePrice ??
+                        servicesMap[selectedBooking.serviceType];
+                      const v = Number(raw ?? 0);
+                      return v > 0 ? `$${v.toFixed(2)}` : "$0.00";
+                    })()}
                   </p>
                 </div>
 
@@ -1341,6 +1477,55 @@ export default function MyBookings() {
                   <p className="text-slate-600 text-sm">
                     {selectedBooking.vehicleModel || "N/A"}
                   </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <Banknote size={16} className="text-emerald-500" />
+                    Payment
+                  </h4>
+                  {selectedBooking.paymentStatus === "paid" ? (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">
+                          Paid
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {selectedBooking.paidAt
+                            ? formatFullDate(selectedBooking.paidAt)
+                            : "—"}
+                        </p>
+                      </div>
+                      <div className="text-emerald-600 font-bold">
+                        {(() => {
+                          const raw =
+                            selectedBooking.servicePrice ??
+                            servicesMap[selectedBooking.serviceType];
+                          const v = Number(raw ?? 0);
+                          return v > 0 ? `$${v.toFixed(2)}` : "$0.00";
+                        })()}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">
+                          Unpaid
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Complete payment to mark as paid
+                        </p>
+                      </div>
+                      <div>
+                        <button
+                          onClick={() => handleOpenPayment(selectedBooking)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
+                        >
+                          Pay
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-slate-50 rounded-xl p-4">
@@ -1370,7 +1555,6 @@ export default function MyBookings() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setSelectedBooking(null)}
@@ -1378,6 +1562,7 @@ export default function MyBookings() {
                 >
                   Close
                 </button>
+
                 {selectedBooking.status === "Completed" && (
                   <button
                     onClick={() => {
@@ -1396,7 +1581,6 @@ export default function MyBookings() {
         </div>
       )}
 
-      {/* Review Modal */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-slideUp">
@@ -1454,7 +1638,6 @@ export default function MyBookings() {
               </div>
             ) : (
               <div className="p-6">
-                {/* Service Info */}
                 {reviewBooking && (
                   <div className="bg-slate-50 rounded-xl p-4 mb-5">
                     <p className="text-sm font-medium text-slate-900">
@@ -1467,7 +1650,6 @@ export default function MyBookings() {
                   </div>
                 )}
 
-                {/* Star Rating */}
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-slate-700 mb-3">
                     How was your experience?
@@ -1500,7 +1682,6 @@ export default function MyBookings() {
                   </p>
                 </div>
 
-                {/* Comment */}
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Your Review
@@ -1514,7 +1695,6 @@ export default function MyBookings() {
                   />
                 </div>
 
-                {/* Submit Button */}
                 <button
                   onClick={handleSubmitReview}
                   disabled={reviewSubmitting || !reviewComment.trim()}
@@ -1538,7 +1718,114 @@ export default function MyBookings() {
         </div>
       )}
 
-      {/* CSS for animations */}
+      {showPaymentModal && paymentBooking && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-slideUp">
+            <div className="p-5 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-slate-900">
+                  Complete Payment
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setPaymentBooking(null);
+                  }}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X size={18} className="text-slate-500" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <div className="bg-gradient-to-r from-sky-50 to-cyan-50 rounded-xl p-4 mb-5">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600">Service</span>
+                    <span className="text-sm font-semibold">
+                      {paymentBooking.serviceType}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600">Booking ID</span>
+                    <span className="text-sm font-semibold">
+                      {paymentBooking.bookingId}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-2 mt-2">
+                    <span className="text-sm font-medium text-slate-900">
+                      Amount Due
+                    </span>
+                    <span className="text-lg font-bold text-sky-600">
+                      {paymentAmount > 0
+                        ? `$${paymentAmount.toFixed(2)}`
+                        : "$0.00"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <p className="text-sm font-medium text-slate-700 mb-3">
+                  Payment Method
+                </p>
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  {paymentBooking.paymentMethod === "card" ? (
+                    <>
+                      <CreditCard size={20} className="text-sky-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          Card Payment
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          ****{paymentBooking.cardLast4 || "****"}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Banknote size={20} className="text-emerald-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          Cash Payment
+                        </p>
+                        <p className="text-xs text-slate-500">Pay at pickup</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {paymentDone ? (
+                <div className="w-full py-3.5 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-medium flex items-center justify-center gap-2 border border-emerald-100">
+                  <Check size={16} />
+                  Payment Completed
+                </div>
+              ) : (
+                <button
+                  onClick={handleConfirmPayment}
+                  disabled={paymentLoading}
+                  className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25"
+                >
+                  {paymentLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Confirm Payment
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }

@@ -81,7 +81,7 @@ export default function UserManagement() {
 
       <main className="min-h-screen bg-slate-50 py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          {/* Page Header */}
+          
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -109,7 +109,7 @@ export default function UserManagement() {
             </button>
           </div>
 
-          {/* Search */}
+          
           <div className="card mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -123,7 +123,7 @@ export default function UserManagement() {
             </div>
           </div>
 
-          {/* Stats */}
+          
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="card bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100">
               <div className="flex items-center gap-3">
@@ -140,7 +140,7 @@ export default function UserManagement() {
             </div>
           </div>
 
-          {/* Users Table */}
+          
           {loading ? (
             <div className="card text-center py-16">
               <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto mb-4" />

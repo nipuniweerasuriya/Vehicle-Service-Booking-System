@@ -45,14 +45,12 @@ export default function TrackBooking() {
   const [expandedCard, setExpandedCard] = useState(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
 
-  // All bookings state
   const [allBookings, setAllBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid");
 
-  // Fetch all bookings on component mount
   useEffect(() => {
     fetchAllBookings();
   }, []);
@@ -84,13 +82,11 @@ export default function TrackBooking() {
     }
   };
 
-  // Filter bookings by status
   const filteredBookings =
     statusFilter === "All"
       ? allBookings
       : allBookings.filter((b) => b.status === statusFilter);
 
-  // Status counts for filter badges
   const statusCounts = {
     All: allBookings.length,
     Pending: allBookings.filter((b) => b.status === "Pending").length,
@@ -98,7 +94,6 @@ export default function TrackBooking() {
     Completed: allBookings.filter((b) => b.status === "Completed").length,
   };
 
-  // Service details data mapping
   const getServiceDetails = (serviceName) => {
     const serviceData = {
       "Oil Change": {
@@ -317,7 +312,7 @@ export default function TrackBooking() {
 
       <main className="min-h-screen py-16 px-4 bg-gradient-mesh">
         <div className="max-w-5xl mx-auto">
-          {/* Page Header */}
+          
           <div className="mb-12 text-center animate-fade-in">
             <div className="mb-4 inline-block">
               <span className="bg-gradient-to-r from-sky-100 to-cyan-100 px-5 py-2 rounded-full text-sm font-bold text-sky-700">
@@ -333,7 +328,7 @@ export default function TrackBooking() {
             </p>
           </div>
 
-          {/* Search Section */}
+          
           <div className="glass-card p-8 mb-8 animate-fade-in">
             <form onSubmit={handleSearch}>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -370,7 +365,7 @@ export default function TrackBooking() {
                 </button>
               </div>
 
-              {/* Error Message */}
+              
               {error && searched && (
                 <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
                   <AlertCircle
@@ -389,10 +384,10 @@ export default function TrackBooking() {
             </form>
           </div>
 
-          {/* All Bookings Section */}
+          
           {!searchResult && (
             <div className="mb-8 animate-fade-in">
-              {/* Section Header */}
+              
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -404,7 +399,7 @@ export default function TrackBooking() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {/* View Mode Toggle */}
+                  
                   <div className="flex bg-slate-100 rounded-lg p-1">
                     <button
                       onClick={() => setViewMode("grid")}
@@ -419,7 +414,7 @@ export default function TrackBooking() {
                       <List size={18} />
                     </button>
                   </div>
-                  {/* Refresh Button */}
+                  
                   <button
                     onClick={fetchAllBookings}
                     disabled={loadingBookings}
@@ -433,7 +428,7 @@ export default function TrackBooking() {
                 </div>
               </div>
 
-              {/* Status Filter Tabs */}
+              
               <div className="flex flex-wrap gap-2 mb-6">
                 {["All", "Pending", "Approved", "Completed"].map((status) => (
                   <button
@@ -464,7 +459,7 @@ export default function TrackBooking() {
                 ))}
               </div>
 
-              {/* Loading State */}
+              
               {loadingBookings ? (
                 <div className="glass-card p-12 text-center">
                   <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -483,7 +478,7 @@ export default function TrackBooking() {
                   </p>
                 </div>
               ) : viewMode === "grid" ? (
-                /* Grid View */
+                
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredBookings.map((booking) => (
                     <div
@@ -491,7 +486,7 @@ export default function TrackBooking() {
                       onClick={() => setSelectedBooking(booking)}
                       className="glass-card p-0 overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
                     >
-                      {/* Status Banner */}
+                      
                       <div
                         className={`px-4 py-2 ${getStatusConfig(booking.status).bg}`}
                       >
@@ -514,7 +509,7 @@ export default function TrackBooking() {
                       </div>
 
                       <div className="p-4">
-                        {/* Booking ID */}
+                        
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-mono text-sm font-bold text-sky-600">
                             {booking.id}
@@ -525,7 +520,7 @@ export default function TrackBooking() {
                           />
                         </div>
 
-                        {/* Service Info */}
+                        
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
                             <Wrench size={18} className="text-sky-600" />
@@ -540,7 +535,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Customer & Vehicle */}
+                        
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2 text-slate-600">
                             <User size={14} className="flex-shrink-0" />
@@ -560,7 +555,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* View Details Hint */}
+                        
                         <div className="mt-4 pt-3 border-t border-slate-100">
                           <span className="text-xs text-sky-500 flex items-center gap-1">
                             <Eye size={12} /> Click to view full details
@@ -571,7 +566,7 @@ export default function TrackBooking() {
                   ))}
                 </div>
               ) : (
-                /* List View */
+                
                 <div className="glass-card p-0 overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -674,7 +669,7 @@ export default function TrackBooking() {
             </div>
           )}
 
-          {/* Selected Booking Modal */}
+          
           {selectedBooking && (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
@@ -684,7 +679,7 @@ export default function TrackBooking() {
                 className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Modal Header */}
+                
                 <div className="sticky top-0 bg-gradient-to-r from-sky-500 to-cyan-500 p-6 text-white rounded-t-2xl">
                   <div className="flex items-center justify-between">
                     <div>
@@ -715,9 +710,9 @@ export default function TrackBooking() {
                   </div>
                 </div>
 
-                {/* Modal Content */}
+                
                 <div className="p-6 space-y-6">
-                  {/* Progress Timeline */}
+                  
                   <div className="bg-slate-50 rounded-xl p-5">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="font-bold text-slate-900 flex items-center gap-2">
@@ -733,7 +728,7 @@ export default function TrackBooking() {
 
                     {selectedBooking.status === "Approved" ? (
                       <>
-                        {/* Progress Bar */}
+                        
                         <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden mb-4">
                           <div
                             className="h-full bg-blue-600 rounded-full transition-all duration-500"
@@ -741,7 +736,7 @@ export default function TrackBooking() {
                           />
                         </div>
 
-                        {/* Progress Stages */}
+                        
                         <div className="flex items-center justify-between text-xs">
                           {[
                             { label: "Received", value: 20 },
@@ -820,9 +815,9 @@ export default function TrackBooking() {
                     )}
                   </div>
 
-                  {/* Details Grid */}
+                  
                   <div className="grid md:grid-cols-2 gap-4">
-                    {/* Service Details */}
+                    
                     <div className="bg-slate-50 rounded-xl p-5">
                       <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <Wrench size={18} className="text-sky-500" />
@@ -852,7 +847,7 @@ export default function TrackBooking() {
                         </div>
                       </div>
 
-                      {/* What's Included */}
+                      
                       <div className="mt-4 pt-4 border-t border-slate-200">
                         <p className="text-sm font-medium text-slate-700 mb-2">
                           What's Included:
@@ -876,7 +871,7 @@ export default function TrackBooking() {
                       </div>
                     </div>
 
-                    {/* Appointment Details */}
+                    
                     <div className="bg-slate-50 rounded-xl p-5">
                       <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <Calendar size={18} className="text-sky-500" />
@@ -904,7 +899,7 @@ export default function TrackBooking() {
                       </div>
                     </div>
 
-                    {/* Vehicle Details */}
+                    
                     <div className="bg-slate-50 rounded-xl p-5">
                       <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <Car size={18} className="text-sky-500" />
@@ -926,7 +921,7 @@ export default function TrackBooking() {
                       </div>
                     </div>
 
-                    {/* Customer Details */}
+                    
                     <div className="bg-slate-50 rounded-xl p-5">
                       <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <User size={18} className="text-sky-500" />
@@ -949,7 +944,7 @@ export default function TrackBooking() {
                     </div>
                   </div>
 
-                  {/* Service Note */}
+                  
                   <div className="bg-gradient-to-r from-sky-50 to-cyan-50 rounded-xl p-4 border border-sky-200">
                     <div className="flex items-start gap-3">
                       <Info
@@ -968,7 +963,7 @@ export default function TrackBooking() {
                   </div>
                 </div>
 
-                {/* Modal Footer */}
+                
                 <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 rounded-b-2xl">
                   <div className="flex gap-3">
                     <button
@@ -990,10 +985,10 @@ export default function TrackBooking() {
             </div>
           )}
 
-          {/* Search Result */}
+          
           {searchResult && (
             <div className="animate-scale-in space-y-6">
-              {/* Status Header Card */}
+              
               <div className="glass-card p-0 overflow-hidden">
                 <div className="bg-gradient-to-r from-sky-500 to-cyan-500 p-6 text-white">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1020,14 +1015,14 @@ export default function TrackBooking() {
                 </div>
 
                 <div className="p-6">
-                  {/* Status Timeline */}
+                  
                   <div className="mb-8">
                     <h3 className="font-bold text-lg text-slate-900 mb-6 flex items-center gap-2">
                       <Sparkles size={20} className="text-sky-500" />
                       Progress Timeline
                     </h3>
                     <div className="relative">
-                      {/* Progress Line */}
+                      
                       <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-slate-200" />
                       <div
                         className="absolute left-6 top-8 w-0.5 bg-gradient-to-b from-emerald-500 to-sky-500 transition-all duration-500"
@@ -1084,9 +1079,9 @@ export default function TrackBooking() {
                     </div>
                   </div>
 
-                  {/* Booking Details Grid */}
+                  
                   <div className="grid md:grid-cols-2 gap-6">
-                    {/* Service Info - Expandable */}
+                    
                     <div
                       className={`bg-slate-50 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer
                                   hover:shadow-lg hover:bg-sky-50 border-2 ${expandedCard === "service" ? "border-sky-500 ring-4 ring-sky-500/20" : "border-transparent"}`}
@@ -1129,12 +1124,12 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Expanded Service Details */}
+                        
                         <div
                           className={`overflow-hidden transition-all duration-300 ${expandedCard === "service" ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}`}
                         >
                           <div className="border-t border-slate-200 pt-4 space-y-4">
-                            {/* Duration */}
+                            
                             <div className="flex items-center gap-3 bg-white rounded-lg p-3">
                               <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
                                 <Timer size={18} className="text-amber-600" />
@@ -1152,7 +1147,7 @@ export default function TrackBooking() {
                               </div>
                             </div>
 
-                            {/* Description */}
+                            
                             <div className="bg-white rounded-lg p-3">
                               <div className="flex items-center gap-2 mb-2">
                                 <Info size={16} className="text-sky-500" />
@@ -1168,7 +1163,7 @@ export default function TrackBooking() {
                               </p>
                             </div>
 
-                            {/* What's Included */}
+                            
                             <div className="bg-white rounded-lg p-3">
                               <div className="flex items-center gap-2 mb-3">
                                 <ListChecks
@@ -1197,7 +1192,7 @@ export default function TrackBooking() {
                               </ul>
                             </div>
 
-                            {/* Additional Note */}
+                            
                             <div className="bg-gradient-to-r from-sky-50 to-cyan-50 rounded-lg p-3 border border-sky-100">
                               <p className="text-sm text-sky-700">
                                 <strong>Note:</strong>{" "}
@@ -1205,7 +1200,7 @@ export default function TrackBooking() {
                               </p>
                             </div>
 
-                            {/* View Full Details Button */}
+                            
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1219,7 +1214,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Click hint */}
+                        
                         {expandedCard !== "service" && (
                           <p className="text-xs text-sky-500 mt-3 text-center animate-pulse">
                             Click to see full service details
@@ -1228,7 +1223,7 @@ export default function TrackBooking() {
                       </div>
                     </div>
 
-                    {/* Appointment Info - Expandable */}
+                    
                     <div
                       className={`bg-slate-50 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer
                                   hover:shadow-lg hover:bg-sky-50 border-2 ${expandedCard === "appointment" ? "border-sky-500 ring-4 ring-sky-500/20" : "border-transparent"}`}
@@ -1265,12 +1260,12 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Expanded Appointment Details */}
+                        
                         <div
                           className={`overflow-hidden transition-all duration-300 ${expandedCard === "appointment" ? "max-h-[400px] opacity-100 mt-4" : "max-h-0 opacity-0"}`}
                         >
                           <div className="border-t border-slate-200 pt-4 space-y-4">
-                            {/* Location */}
+                            
                             <div className="flex items-center gap-3 bg-white rounded-lg p-3">
                               <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
                                 <MapPin
@@ -1291,7 +1286,7 @@ export default function TrackBooking() {
                               </div>
                             </div>
 
-                            {/* Estimated Duration */}
+                            
                             <div className="flex items-center gap-3 bg-white rounded-lg p-3">
                               <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
                                 <Clock size={18} className="text-amber-600" />
@@ -1309,7 +1304,7 @@ export default function TrackBooking() {
                               </div>
                             </div>
 
-                            {/* Reminders */}
+                            
                             <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-3 border border-amber-100">
                               <p className="text-sm font-medium text-amber-800 mb-2">
                                 📋 Before Your Appointment:
@@ -1323,7 +1318,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Click hint */}
+                        
                         {expandedCard !== "appointment" && (
                           <p className="text-xs text-sky-500 mt-3 text-center animate-pulse">
                             Click to see appointment details
@@ -1332,7 +1327,7 @@ export default function TrackBooking() {
                       </div>
                     </div>
 
-                    {/* Vehicle Info - Expandable */}
+                    
                     <div
                       className={`bg-slate-50 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer
                                   hover:shadow-lg hover:bg-sky-50 border-2 ${expandedCard === "vehicle" ? "border-sky-500 ring-4 ring-sky-500/20" : "border-transparent"}`}
@@ -1369,7 +1364,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Expanded Vehicle Details */}
+                        
                         <div
                           className={`overflow-hidden transition-all duration-300 ${expandedCard === "vehicle" ? "max-h-[300px] opacity-100 mt-4" : "max-h-0 opacity-0"}`}
                         >
@@ -1395,7 +1390,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Click hint */}
+                        
                         {expandedCard !== "vehicle" && (
                           <p className="text-xs text-sky-500 mt-3 text-center animate-pulse">
                             Click to see vehicle details
@@ -1404,7 +1399,7 @@ export default function TrackBooking() {
                       </div>
                     </div>
 
-                    {/* Customer Info - Expandable */}
+                    
                     <div
                       className={`bg-slate-50 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer
                                   hover:shadow-lg hover:bg-sky-50 border-2 ${expandedCard === "customer" ? "border-sky-500 ring-4 ring-sky-500/20" : "border-transparent"}`}
@@ -1441,7 +1436,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Expanded Customer Details */}
+                        
                         <div
                           className={`overflow-hidden transition-all duration-300 ${expandedCard === "customer" ? "max-h-[300px] opacity-100 mt-4" : "max-h-0 opacity-0"}`}
                         >
@@ -1468,7 +1463,7 @@ export default function TrackBooking() {
                           </div>
                         </div>
 
-                        {/* Click hint */}
+                        
                         {expandedCard !== "customer" && (
                           <p className="text-xs text-sky-500 mt-3 text-center animate-pulse">
                             Click to see customer details
@@ -1478,7 +1473,7 @@ export default function TrackBooking() {
                     </div>
                   </div>
 
-                  {/* Contact Note */}
+                  
                   <div className="mt-6 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 rounded-xl p-4 flex items-start gap-3">
                     <Phone
                       size={20}
@@ -1499,7 +1494,7 @@ export default function TrackBooking() {
             </div>
           )}
 
-          {/* Contact Section */}
+          
           <div className="mt-12 glass-card p-8 bg-gradient-to-r from-sky-50/80 via-cyan-50/80 to-teal-50/80 text-center">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
               Still Need Help?
@@ -1519,7 +1514,7 @@ export default function TrackBooking() {
         </div>
       </main>
 
-      {/* Service Details Modal */}
+      
       {showServiceModal && searchResult && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
@@ -1529,7 +1524,7 @@ export default function TrackBooking() {
             className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
+            
             <div className="sticky top-0 bg-gradient-to-r from-sky-500 to-cyan-500 p-6 text-white rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
@@ -1545,9 +1540,9 @@ export default function TrackBooking() {
               </div>
             </div>
 
-            {/* Modal Content */}
+            
             <div className="p-6 space-y-6">
-              {/* Price & Duration */}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-emerald-50 rounded-xl p-4 text-center border border-emerald-100">
                   <DollarSign
@@ -1568,7 +1563,7 @@ export default function TrackBooking() {
                 </div>
               </div>
 
-              {/* Description */}
+              
               <div>
                 <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
                   <Info size={18} className="text-sky-500" />
@@ -1579,7 +1574,7 @@ export default function TrackBooking() {
                 </p>
               </div>
 
-              {/* What's Included */}
+              
               <div>
                 <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
                   <ListChecks size={18} className="text-emerald-500" />
@@ -1605,7 +1600,7 @@ export default function TrackBooking() {
                 </div>
               </div>
 
-              {/* Booking Summary */}
+              
               <div>
                 <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
                   <FileText size={18} className="text-sky-500" />
@@ -1647,7 +1642,7 @@ export default function TrackBooking() {
                 </div>
               </div>
 
-              {/* Important Note */}
+              
               <div className="bg-gradient-to-r from-sky-50 to-cyan-50 rounded-xl p-4 border border-sky-200">
                 <div className="flex items-start gap-3">
                   <Sparkles
@@ -1666,7 +1661,7 @@ export default function TrackBooking() {
               </div>
             </div>
 
-            {/* Modal Footer */}
+            
             <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 rounded-b-2xl">
               <div className="flex gap-3">
                 <button

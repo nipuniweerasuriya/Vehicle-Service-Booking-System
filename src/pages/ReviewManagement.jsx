@@ -148,7 +148,7 @@ export default function ReviewManagement() {
 
       <main className="min-h-screen bg-slate-50 py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          {/* Page Header */}
+          
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -176,7 +176,7 @@ export default function ReviewManagement() {
             </button>
           </div>
 
-          {/* Search and Filter */}
+          
           <div className="card mb-6">
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="relative flex-1">
@@ -191,7 +191,7 @@ export default function ReviewManagement() {
               </div>
             </div>
 
-            {/* Status Filter */}
+            
             <div className="mt-4 pt-4 border-t border-slate-100">
               <p className="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
                 <Filter size={14} /> Filter by Status
@@ -217,7 +217,7 @@ export default function ReviewManagement() {
             </div>
           </div>
 
-          {/* Stats */}
+          
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="card bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
               <p className="text-2xl font-bold text-amber-600">
@@ -245,7 +245,7 @@ export default function ReviewManagement() {
             </div>
           </div>
 
-          {/* Reviews List */}
+          
           {loading ? (
             <div className="card text-center py-16">
               <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-4" />
@@ -270,7 +270,7 @@ export default function ReviewManagement() {
                   className="card hover:shadow-lg transition-shadow"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                    {/* Review Content */}
+                    
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-medium">
@@ -305,7 +305,7 @@ export default function ReviewManagement() {
                       </p>
                     </div>
 
-                    {/* Actions */}
+                    
                     <div className="flex sm:flex-col gap-2">
                       {review.status === "pending" && (
                         <>

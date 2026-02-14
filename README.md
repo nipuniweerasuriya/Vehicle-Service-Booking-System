@@ -2,7 +2,7 @@
 
 A modern, professional, and fully responsive Vehicle Service Booking System with customer and admin portals.
 
-## 🎨 Design Features
+## Design Features
 
 ### Design Aesthetic
 
@@ -23,7 +23,7 @@ A modern, professional, and fully responsive Vehicle Service Booking System with
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -51,7 +51,7 @@ src/
 
 ---
 
-## 🚀 Customer Features
+## Customer Features
 
 ### Home Page
 
@@ -98,7 +98,7 @@ src/
 
 ---
 
-## 👨‍💼 Admin Features
+## Admin Features
 
 ### Admin Login
 
@@ -139,7 +139,7 @@ src/
 
 ---
 
-## 🔐 Authentication
+## Authentication
 
 **Demo Admin Credentials:**
 
@@ -152,7 +152,7 @@ Admin routes are protected and redirect to login if not authenticated.
 
 ---
 
-## 📱 Responsive Design
+## Responsive Design
 
 - **Mobile-first** approach
 - **Breakpoints**:
@@ -167,7 +167,7 @@ Admin routes are protected and redirect to login if not authenticated.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -184,7 +184,7 @@ Admin routes are protected and redirect to login if not authenticated.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -224,7 +224,7 @@ npm run preview
 
 ---
 
-## 📋 Pages Overview
+## Pages Overview
 
 | Page            | Route              | Type      | Description                         |
 | --------------- | ------------------ | --------- | ----------------------------------- |
@@ -240,22 +240,22 @@ npm run preview
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
-✅ **Fully Responsive** - Works on mobile, tablet, and desktop
-✅ **Professional Design** - Clean, modern aesthetic
-✅ **Form Validation** - Real-time input validation
-✅ **Status Tracking** - Track bookings in real-time
-✅ **Admin Management** - Complete admin dashboard
-✅ **Service Management** - Add/edit/delete services
-✅ **Smooth Animations** - Professional transitions and effects
-✅ **Mobile Navigation** - Responsive menu
-✅ **Context API** - State management
-✅ **Icons** - Lucide React icons throughout
+- **Fully Responsive** - Works on mobile, tablet, and desktop
+- **Professional Design** - Clean, modern aesthetic
+- **Form Validation** - Real-time input validation
+- **Status Tracking** - Track bookings in real-time
+- **Admin Management** - Complete admin dashboard
+- **Service Management** - Add/edit/delete services
+- **Smooth Animations** - Professional transitions and effects
+- **Mobile Navigation** - Responsive menu
+- **Context API** - State management
+- **Icons** - Lucide React icons throughout
 
 ---
 
-## 🔄 State Management
+## State Management
 
 Uses React Context API for:
 
@@ -264,7 +264,7 @@ Uses React Context API for:
 
 ---
 
-## 📊 Demo Data
+## Demo Data
 
 The app includes 3 sample bookings for demonstration:
 
@@ -274,7 +274,7 @@ The app includes 3 sample bookings for demonstration:
 
 ---
 
-## 🎨 Customization
+## Customization
 
 ### Colors
 
@@ -301,7 +301,7 @@ All components are reusable and can be customized in the `src/components` direct
 
 ---
 
-## ⚡ Performance
+## Performance
 
 - Optimized bundle size (~100KB gzipped)
 - Lazy loading for routes
@@ -311,7 +311,7 @@ All components are reusable and can be customized in the `src/components` direct
 
 ---
 
-## 📝 Notes
+## Notes
 
 - This is a **frontend-only** application with mock data
 - Services will reset on page refresh (no persistence)
@@ -321,7 +321,7 @@ All components are reusable and can be customized in the `src/components` direct
 
 ---
 
-## 🔗 Navigation
+## Navigation
 
 **Customer Flow:**
 Home → Services → Book Service → Confirmation → Track Booking
@@ -331,7 +331,7 @@ Login → Dashboard → Manage Bookings/Services
 
 ---
 
-## 📱 Browser Support
+## Browser Support
 
 - Chrome (latest)
 - Firefox (latest)
@@ -340,7 +340,7 @@ Login → Dashboard → Manage Bookings/Services
 
 ---
 
-## 👨‍💻 Development
+## Development
 
 ### Code Style
 
@@ -359,7 +359,7 @@ Login → Dashboard → Manage Bookings/Services
 
 ---
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 - Backend API integration
 - Payment gateway
@@ -374,19 +374,19 @@ Login → Dashboard → Manage Bookings/Services
 
 ---
 
-## 📄 License
+## License
 
 This project is part of an internship project at Fuchsius Company.
 
 ---
 
-## 👥 Support
+## Support
 
 For questions or issues, please contact your project mentor or team lead.
 
 ---
 
-## ✨ Credits
+## Credits
 
 **Tech Stack**: React, Vite, Tailwind CSS, Lucide Icons
 
